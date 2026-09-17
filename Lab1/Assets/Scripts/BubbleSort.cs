@@ -48,6 +48,7 @@ public class BubbleSort : MonoBehaviour
             {
                 heightsDirty = false;
                 Debug.Log("Sorting finished");
+                thSort.Abort();
             }
         }
     }
