@@ -13,7 +13,7 @@ public class ClientNetworkManager : MonoBehaviour
     [SerializeField] TMP_Text Canvas_userList;
 
     //user list 
-    List<string> usersList = new List<string>();
+    public List<string> usersList = new List<string>();
 
     //ui components
     public string serverIp = "127.0.0.1";

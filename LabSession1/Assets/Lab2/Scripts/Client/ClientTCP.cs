@@ -148,6 +148,30 @@ public class ClientTCP : MonoBehaviour
 
     void OnPacketReceived(byte[] data)
     {
+        string dataString = Encoding.UTF8.GetString(data);
+        //split string to check for commands
+        string[] splitString = dataString.Split('_');
+
+        //check if what has been receieved is a command from server
+        //if so --> dont show on screen
+        bool isCommand = false;
+
+        if(splitString.Length > 0)
+        {
+            if (splitString[0] == "LISTADD")
+            {
+                //add to list of users
+                networkManager.usersList.Add(splitString[1]);
+                isCommand = true;
+            } 
+            else if (splitString[0] == "LISTDELETE")
+            {
+                // remove from list of users
+                networkManager.usersList.Remove(splitString[1]);
+                isCommand = true;
+            }
+        }
+        
         if (Encoding.UTF8.GetString(data) == "H")
         {
             networkManager.isHost = true;
@@ -155,7 +179,7 @@ public class ClientTCP : MonoBehaviour
         }
         else
         {
-            Log(Encoding.UTF8.GetString(data));
+            if(!isCommand) Log(Encoding.UTF8.GetString(data));
         }
     }
 
