@@ -6,7 +6,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using UnityEditor.Sprites;
 using UnityEngine;
 
 public class Connection : MonoBehaviour
@@ -268,6 +267,12 @@ public class Connection : MonoBehaviour
         lock (m_clients) m_clients.Remove(client);
         Log("[SERVER] " + usersConnected[client] + " disconnected");
 
+        foreach (var user in usersConnected)
+        {
+            SendStringTCP("LISTREMOVE_" + usersConnected[client], user.Key);
+            Debug.Log("LISTREMOVE_" + usersConnected[client]);
+        }
+
         //Close all users if host leaves
         if (client == usersConnected.First().Key)
         {
@@ -327,6 +332,22 @@ public class Connection : MonoBehaviour
             if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
             {
                 usersConnected[from] = text;
+                String allUsers = string.Join("_", usersConnected.Values);
+
+                foreach (var user in usersConnected)
+                {
+                    //Check if is the last user to join, if so send the list of users to all users
+                    if (user.Key == usersConnected.Last().Key)
+                    {
+                        SendStringTCP("ALLLIST_" + allUsers, user.Key);
+                        Debug.Log("ALLLIST_" + allUsers);
+                    }
+                    else
+                    {
+                        SendStringTCP("LISTADD_" + text, user.Key);
+                        Debug.Log("LISTADD_" + text);
+                    }
+                }
             }
 
             foreach (var user in usersConnected)
@@ -350,8 +371,17 @@ public class Connection : MonoBehaviour
         string text = Encoding.UTF8.GetString(data);
         Log("[SERVER] Received: " + text + " from " + from);
 
+        if (text == "STARTGAME")
+        {
+            //Load a new scene for all clients
+            foreach (var user in m_knownClients)
+                SendStringUDP("STARTGAME", user);
+
+
+        }
+
         bool isNew;
-        lock (m_knownClients) isNew = m_knownClients.Add(from);   // no Accept: this IS the list
+        lock (m_knownClients) isNew = m_knownClients.Add(from);
         if (isNew) Log("[SERVER] New client: " + from);
 
         SendStringUDP(serverName, from);

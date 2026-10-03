@@ -149,13 +149,14 @@ public class ClientNetworkManager : MonoBehaviour
         if (isHost)
         {
             //send server the command to start the game
-            UDPconnection.SendMessage("STARTGAME");
+            UDPconnection.SendString("STARTGAME");
         }
     }
 
     public void LoadGameScene()
     {
         SceneManager.LoadScene("Client_GameScene");
+        isPlaying = true;
     }
 
     public void Log(string message)

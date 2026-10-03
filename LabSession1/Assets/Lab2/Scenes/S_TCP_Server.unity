@@ -295,7 +295,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e1f5fbbcf4b4e945b4d72651232c3fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ConnectionManager
-  port: 9050
+  ctpc: {fileID: 1087513322}
+  cudp: {fileID: 1087513321}
+  portTcp: 9050
+  portUdp: 9051
   serverName: MyServer
   autoStart: 1
 --- !u!114 &1087513321
@@ -310,7 +313,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3c5ee5fa7083cc4bb643fa1337dac65, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Connection
-  port: 9050
+  port: 9051
   serverName: MyServer
   autoStart: 1
 --- !u!114 &1087513322
