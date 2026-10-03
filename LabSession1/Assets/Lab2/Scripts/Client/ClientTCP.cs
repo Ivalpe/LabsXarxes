@@ -16,8 +16,6 @@ public class ClientTCP : MonoBehaviour
     public int port = 9050;
     public string userName = "Player";
 
-    private bool isHost = false;
-
     // =============================================================================================
     //  GIVEN CODE - nothing to modify until the TODO area
     // =============================================================================================
@@ -36,11 +34,6 @@ public class ClientTCP : MonoBehaviour
     {
         Application.runInBackground = true;   // or the window without focus is paused
         networkManager = GetComponent<ClientNetworkManager>();
-    }
-
-    public bool isClientHost()
-    {
-        return isHost;
     }
 
     public void StartNetwork(string ip, string name, int portToUse)
@@ -157,7 +150,7 @@ public class ClientTCP : MonoBehaviour
     {
         if (Encoding.UTF8.GetString(data) == "H")
         {
-            isHost = true;
+            networkManager.isHost = true;
             Log("You are this server's Host.");
         }
         else

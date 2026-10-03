@@ -23,6 +23,7 @@ public class ClientNetworkManager : MonoBehaviour
     public string userName = "Player";
     public string text = "Type here";
     public bool autoStart = false;
+    public bool isHost = false;
 
     //all log messages
     readonly List<string> m_log = new List<string>();
@@ -55,17 +56,24 @@ public class ClientNetworkManager : MonoBehaviour
 
     private void Update()
     {
+        //check if network is still up for both --> disconnect other to avoid issues
+        if(!TCPconnection.IsRunning && UDPconnection.IsRunning) UDPconnection.Disconnect();
+        else if (TCPconnection.IsRunning && !UDPconnection.IsRunning) TCPconnection.Disconnect();
+
         //update canvas ui
         CanvasGui();
     }
 
     void CanvasGui()
     {
-        //display user list
-        Canvas_userList.text = "User List: /n";
-        foreach (var user in usersList)
+        if(Canvas_userList != null)
         {
-            if(user != null) Canvas_userList.text += (user + "/n");
+            //display user list
+            Canvas_userList.text = "User List: /n";
+            foreach (var user in usersList)
+            {
+                if (user != null) Canvas_userList.text += (user + "/n");
+            }
         }
     }
 
@@ -77,7 +85,7 @@ public class ClientNetworkManager : MonoBehaviour
             GUILayout.Label("CLIENT   port " + port);
 
             GUILayout.BeginHorizontal();
-            if (!TCPconnection.IsRunning)
+            if (!TCPconnection.IsRunning && !UDPconnection.IsRunning)
             {
                 //editable username before connecting to server
                 GUILayout.Label("Username:", GUILayout.Width(70));
@@ -102,7 +110,7 @@ public class ClientNetworkManager : MonoBehaviour
                 //send chat message to server (using TCP)
                 if (GUILayout.Button("Send", GUILayout.Width(110))) TCPconnection.SendString(text);
                 //if host --> play button
-                if (TCPconnection.isClientHost())
+                if (isHost)
                 {
                     if (GUILayout.Button("Play", GUILayout.Width(110)))
                     {
