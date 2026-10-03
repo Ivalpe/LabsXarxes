@@ -6,17 +6,20 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using UnityEditor.Sprites;
 using UnityEngine;
 
 public class Connection : MonoBehaviour
 {
-    enum ConnectionType
+    public enum ConnectionType
     {
         UDP,
         TCP
     }
 
-    public int port = 9050;
+    ConnectionManager connectionManager;
+
+    public int port;
     public string serverName = "MyServer";
     public bool autoStart = true;
 
@@ -34,21 +37,45 @@ public class Connection : MonoBehaviour
     readonly List<Thread> m_threads = new List<Thread>();
     readonly ConcurrentQueue<PacketUDP> m_inboxUDP = new ConcurrentQueue<PacketUDP>();
     readonly ConcurrentQueue<PacketTCP> m_inboxTCP = new ConcurrentQueue<PacketTCP>();
-    readonly List<string> m_log = new List<string>();
     readonly HashSet<int> m_warned = new HashSet<int>();
     volatile bool m_running;
     bool host = false;
 
-    Connection(ConnectionType connectionType)
+    public bool IsRunning { get { return m_running; } }
+    public int ClientCount { get { lock (m_knownClients) return m_knownClients.Count; } }
+    public void SetPort(int p)
     {
-        this.connectionType = connectionType;
+        port = p;
+    }
+
+    public void SetType(ConnectionType ct)
+    {
+        connectionType = ct;
+    }
+
+    void Update()
+    {
+        if (connectionType == ConnectionType.TCP)
+        {
+            PacketTCP packet;
+            while (m_inboxTCP.TryDequeue(out packet))
+                OnPacketReceivedTCP(packet.data, packet.from);
+        }
+        else
+        {
+            PacketUDP packet;
+            while (m_inboxUDP.TryDequeue(out packet))
+                OnPacketReceivedUDP(packet.data, packet.from);
+        }
     }
 
     void Start()
     {
         Application.runInBackground = true;
-        ParseCommandLine();
-        if (autoStart) StartNetwork();
+        //ParseCommandLine();
+        //if (autoStart) StartNetwork();
+
+        connectionManager = GetComponent<ConnectionManager>();
     }
 
     void ParseCommandLine()
@@ -237,7 +264,7 @@ public class Connection : MonoBehaviour
     }
     void ClientThread(Socket client)
     {
-        ReceiveLoop(client);
+        ReceiveLoopTCP(client);
         lock (m_clients) m_clients.Remove(client);
         Log("[SERVER] " + usersConnected[client] + " disconnected");
 
@@ -263,22 +290,6 @@ public class Connection : MonoBehaviour
         if (socket == null) return;
         try { socket.Shutdown(SocketShutdown.Both); } catch { }
         try { socket.Close(); } catch { }
-    }
-    void ReceiveLoop(Socket socket)
-    {
-        byte[] header = new byte[4];
-        while (m_running)
-        {
-            if (!ReadExactly(socket, header, 4)) return;
-
-            int size = BitConverter.ToInt32(header, 0);
-            if (size <= 0 || size > MaxPacketSize) { Log("[SERVER] Invalid packet size: " + size); return; }
-
-            byte[] payload = new byte[size];
-            if (!ReadExactly(socket, payload, size)) return;
-
-            m_inboxTCP.Enqueue(new PacketTCP { data = payload, from = socket });
-        }
     }
     void StartThread(ThreadStart work)
     {
@@ -307,19 +318,19 @@ public class Connection : MonoBehaviour
     {
         return socket.Accept();
     }
-    void OnPacketReceived(byte[] data, Socket from)
+    void OnPacketReceivedTCP(byte[] data, Socket from)
     {
         string text = Encoding.UTF8.GetString(data);
 
         if (connectionType == ConnectionType.TCP)
         {
+            if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
+            {
+                usersConnected[from] = text;
+            }
+
             foreach (var user in usersConnected)
             {
-                if (user.Value == "" && from == user.Key)
-                {
-                    usersConnected[user.Key] = text;
-                }
-
                 if (!host)
                 {
                     SendStringTCP("H", user.Key);
@@ -332,6 +343,18 @@ public class Connection : MonoBehaviour
             Log("[" + usersConnected[from] + "]: " + text);
 
         }
+    }
+
+    void OnPacketReceivedUDP(byte[] data, EndPoint from)
+    {
+        string text = Encoding.UTF8.GetString(data);
+        Log("[SERVER] Received: " + text + " from " + from);
+
+        bool isNew;
+        lock (m_knownClients) isNew = m_knownClients.Add(from);   // no Accept: this IS the list
+        if (isNew) Log("[SERVER] New client: " + from);
+
+        SendStringUDP(serverName, from);
     }
     public void SendStringTCP(string text, Socket to)
     {
@@ -372,7 +395,7 @@ public class Connection : MonoBehaviour
     public void Log(string message)
     {
         Debug.Log(message);
-        lock (m_log) { m_log.Add(message); if (m_log.Count > 100) m_log.RemoveAt(0); }
+        if (connectionManager != null) connectionManager.Log(message);
     }
     void WarnTodo(int number, string detail)
     {
@@ -386,19 +409,5 @@ public class Connection : MonoBehaviour
     int SendRawUDP(Socket socket, byte[] data, EndPoint to)
     {
         return socket.SendTo(data, to);   // the destination travels with every single message
-    }
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-        GUILayout.Label("TCP SERVER   port " + port + "   name " + serverName);
-
-        if (!m_running) { if (GUILayout.Button("Start server", GUILayout.Width(110))) StartNetwork(); }
-        else if (GUILayout.Button("Stop", GUILayout.Width(110))) Disconnect();
-
-        lock (m_log)
-            for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
-                GUILayout.Label(m_log[i]);
-
-        GUILayout.EndArea();
     }
 }
