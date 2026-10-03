@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class ClientNetworkManager : MonoBehaviour
 {
@@ -8,9 +9,17 @@ public class ClientNetworkManager : MonoBehaviour
     ClientTCP TCPconnection;
     ClientUDP UDPconnection;
 
+    //canvas ui components
+    [SerializeField] TMP_Text Canvas_userList;
+
+    //user list 
+    List<string> usersList = new List<string>();
+
     //ui components
     public string serverIp = "127.0.0.1";
     public int port = 9050;
+    public int TCPport = 9050;
+    public int UDPport = 9051;
     public string userName = "Player";
     public string text = "Type here";
     public bool autoStart = false;
@@ -39,8 +48,24 @@ public class ClientNetworkManager : MonoBehaviour
 
         if (autoStart) 
         {
-            TCPconnection.StartNetwork(serverIp, userName);
-            UDPconnection.StartNetwork(serverIp, userName);
+            TCPconnection.StartNetwork(serverIp, userName, TCPport);
+            UDPconnection.StartNetwork(serverIp, userName, UDPport);
+        }
+    }
+
+    private void Update()
+    {
+        //update canvas ui
+        CanvasGui();
+    }
+
+    void CanvasGui()
+    {
+        //display user list
+        Canvas_userList.text = "User List: /n";
+        foreach (var user in usersList)
+        {
+            if(user != null) Canvas_userList.text += (user + "/n");
         }
     }
 
@@ -64,8 +89,8 @@ public class ClientNetworkManager : MonoBehaviour
                 if (GUILayout.Button("Connect", GUILayout.Width(110)))
                 {
                     //start both tcp and udp networks
-                    TCPconnection.StartNetwork(serverIp, userName);
-                    UDPconnection.StartNetwork(serverIp, userName);
+                    TCPconnection.StartNetwork(serverIp, userName, TCPport);
+                    UDPconnection.StartNetwork(serverIp, userName, UDPport);
                 }
             }
             else

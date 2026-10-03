@@ -43,10 +43,11 @@ public class ClientTCP : MonoBehaviour
         return isHost;
     }
 
-    public void StartNetwork(string ip, string name)
+    public void StartNetwork(string ip, string name, int portToUse)
     {
         serverIp = ip;
         userName = name;
+        port = portToUse;
         if (m_running) return;
         m_running = true;
         StartThread(ClientThread);
