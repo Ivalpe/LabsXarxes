@@ -111,6 +111,7 @@ public class SocketsTCPServerSolution : MonoBehaviour
 
     void ServerThread()
     {
+        // TCP
         try { m_listener = StartServer(); }                                          // TODO 1
         catch (SocketException e)
         {
@@ -122,6 +123,8 @@ public class SocketsTCPServerSolution : MonoBehaviour
 
         if (m_listener == null) { WarnTodo(1, "StartServer() returned null"); return; }
         Log("[SERVER] Listening on " + port);
+
+
 
         while (m_running)
         {
