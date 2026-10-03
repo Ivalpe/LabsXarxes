@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ClientUDP : MonoBehaviour
 {
@@ -140,7 +141,17 @@ public class ClientUDP : MonoBehaviour
 
     void OnPacketReceived(byte[] data)
     {
-        Log("[CLIENT] Received: " + Encoding.UTF8.GetString(data));
+        //check if what has been receieved is a command from server
+        //if so --> dont show on screen
+        bool isCommand = false;
+
+        if(Encoding.UTF8.GetString(data) == "STARTGAME")
+        {
+            //load game scene
+            networkManager.LoadGameScene();
+        }
+        
+        if(!isCommand) Log(Encoding.UTF8.GetString(data));
     }
 
     void StartThread(ThreadStart work)

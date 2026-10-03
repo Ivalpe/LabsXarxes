@@ -319,7 +319,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05b8196ad336bad4186f5894ab8dd6b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkManager
-  Canvas_userList: {fileID: 0}
+  Canvas_userList: {fileID: 121182828}
+  usersList: []
   serverIp: 127.0.0.1
   port: 9050
   TCPport: 9050
@@ -327,6 +328,7 @@ MonoBehaviour:
   userName: Player
   text: Type here
   autoStart: 0
+  isHost: 0
 --- !u!4 &260889572
 Transform:
   m_ObjectHideFlags: 0

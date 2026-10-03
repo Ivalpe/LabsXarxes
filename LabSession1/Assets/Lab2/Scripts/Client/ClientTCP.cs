@@ -166,14 +166,23 @@ public class ClientTCP : MonoBehaviour
             } 
             else if (splitString[0] == "LISTDELETE")
             {
-                // remove from list of users
+                //remove from list of users
                 networkManager.usersList.Remove(splitString[1]);
+                isCommand = true;
+            } else if (splitString[0] == "ALLLIST")
+            {
+                //add all users already in server to user list
+                for(int i = 1; i < splitString.Length; i++)
+                {
+                    networkManager.usersList.Add(splitString[1]);
+                }
                 isCommand = true;
             }
         }
         
         if (Encoding.UTF8.GetString(data) == "H")
         {
+            //set user as host
             networkManager.isHost = true;
             Log("You are this server's Host.");
         }
@@ -211,11 +220,6 @@ public class ClientTCP : MonoBehaviour
     {
         lock (m_warned) { if (!m_warned.Add(number)) return; }
         Log("[TODO " + number + "] not done yet: " + detail);
-    }
-
-    public void BeginPlay()
-    {
-        Debug.Log("Play");
     }
 
     // =============================================================================================

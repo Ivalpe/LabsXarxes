@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using Unity.VectorGraphics;
+using UnityEngine.SceneManagement;
 
 public class ClientNetworkManager : MonoBehaviour
 {
@@ -69,10 +71,10 @@ public class ClientNetworkManager : MonoBehaviour
         if(Canvas_userList != null)
         {
             //display user list
-            Canvas_userList.text = "User List: /n";
+            Canvas_userList.text = "User List:";
             foreach (var user in usersList)
             {
-                if (user != null) Canvas_userList.text += (user + "/n");
+                if (user != null) Canvas_userList.text += (user);
             }
         }
     }
@@ -114,7 +116,7 @@ public class ClientNetworkManager : MonoBehaviour
                 {
                     if (GUILayout.Button("Play", GUILayout.Width(110)))
                     {
-                        TCPconnection.BeginPlay();
+                        BeginPlay();
                         isPlaying = true;
                     }
                 }
@@ -124,6 +126,9 @@ public class ClientNetworkManager : MonoBehaviour
                     //disconnect both networks
                     TCPconnection.Disconnect();
                     UDPconnection.Disconnect();
+
+                    //clear user list
+                    usersList.Clear();
                 }
             }
 
@@ -137,6 +142,20 @@ public class ClientNetworkManager : MonoBehaviour
 
             GUILayout.EndArea();
         }
+    }
+
+    public void BeginPlay()
+    {
+        if (isHost)
+        {
+            //send server the command to start the game
+            UDPconnection.SendMessage("STARTGAME");
+        }
+    }
+
+    public void LoadGameScene()
+    {
+        SceneManager.LoadScene("Client_GameScene");
     }
 
     public void Log(string message)
