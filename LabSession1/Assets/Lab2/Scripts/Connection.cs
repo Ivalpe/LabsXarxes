@@ -40,6 +40,8 @@ public class Connection : MonoBehaviour
     volatile bool m_running;
     bool host = false;
 
+    float velocityRotation = 0.5f;
+
     public bool IsRunning { get { return m_running; } }
     public int ClientCount { get { lock (m_knownClients) return m_knownClients.Count; } }
     public void SetPort(int p)
@@ -376,11 +378,18 @@ public class Connection : MonoBehaviour
             //Load a new scene for all clients
             foreach (var user in m_knownClients)
                 SendStringUDP("STARTGAME", user);
-
-
         }
 
-        bool isNew;
+        // Send rotation to all clients
+        string[] splitArray = text.Split(char.Parse("_"));
+        if (splitArray[0] == "THECUBE")
+        {
+            float rotation = float.Parse(splitArray[1]) + velocityRotation; ;
+            foreach (var user in m_knownClients)
+                SendStringUDP("THECUBE_" + rotation, user);
+        }
+
+            bool isNew;
         lock (m_knownClients) isNew = m_knownClients.Add(from);
         if (isNew) Log("[SERVER] New client: " + from);
 
