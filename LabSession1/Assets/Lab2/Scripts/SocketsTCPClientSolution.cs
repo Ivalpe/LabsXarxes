@@ -30,14 +30,17 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using TMPro;
 
 public class SocketsTCPClientSolution : MonoBehaviour
 {
     public string serverIp = "127.0.0.1";
-    public string chat = "";
     public int port = 9050;
     public string userName = "Player";
+    public string text = "Type here";
     public bool autoStart = true;
+
+    private bool isHost = false;
 
     // =============================================================================================
     //  GIVEN CODE - nothing to modify until the TODO area
@@ -170,7 +173,11 @@ public class SocketsTCPClientSolution : MonoBehaviour
 
     void OnPacketReceived(byte[] data)
     {
-        Log("[CLIENT] Received: " + Encoding.UTF8.GetString(data));
+        Log(Encoding.UTF8.GetString(data));
+        if (Encoding.UTF8.GetString(data) == "H") { 
+            isHost = true;
+            Log("You are this server's Host.");
+        }
     }
 
     void StartThread(ThreadStart work)
@@ -217,30 +224,48 @@ public class SocketsTCPClientSolution : MonoBehaviour
     void OnGUI()
     {
         GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-        GUILayout.Label("TCP CLIENT   port " + port + "   name " + userName);
+        GUILayout.Label("TCP CLIENT   port " + port);
 
         GUILayout.BeginHorizontal();
         if (!m_running)
         {
+            //editable username before connecting to server
+            GUILayout.Label("Username:", GUILayout.Width(70));
+            userName = GUILayout.TextField(userName, GUILayout.Width(110));
+            //server ip layout
             GUILayout.Label("Server IP:", GUILayout.Width(70));
             serverIp = GUILayout.TextField(serverIp, GUILayout.Width(120));
+            //connect button
             if (GUILayout.Button("Connect", GUILayout.Width(110))) StartNetwork();
+        }
+        else {
+            //username shown
+            GUILayout.Label("Username: " + userName);
+            //chat text UI
+            text = GUILayout.TextField(text, GUILayout.Width(120));
+            //send chat message to server
+            if (GUILayout.Button("Send", GUILayout.Width(110))) SendString(text);
+            //if host --> play button
+            if (isHost)
+            {
+                if (GUILayout.Button("Play", GUILayout.Width(110))) BeginPlay();
+            }
+            //disconnect button
+            if (GUILayout.Button("Disconnect", GUILayout.Width(110))) Disconnect();
+        }
 
-        }
-        else if (GUILayout.Button("Disconnect", GUILayout.Width(110)))
-        {
-            chat = GUILayout.TextField(chat, GUILayout.Width(300));
-            if (GUILayout.Button("Send", GUILayout.Width(110))) StartNetwork();
-        }
         GUILayout.EndHorizontal();
-
-
 
         lock (m_log)
             for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
                 GUILayout.Label(m_log[i]);
 
         GUILayout.EndArea();
+    }
+
+    void BeginPlay()
+    {
+        Debug.Log("Play");
     }
 
     // =============================================================================================
