@@ -7,6 +7,9 @@ using UnityEngine.SceneManagement;
 
 public class ClientNetworkManager : MonoBehaviour
 {
+    //static reference (for changing scenes)
+    public static ClientNetworkManager Instance { get; private set; }
+
     //connections for the manager to access
     ClientTCP TCPconnection;
     ClientUDP UDPconnection;
@@ -27,6 +30,16 @@ public class ClientNetworkManager : MonoBehaviour
     public bool autoStart = false;
     public bool isHost = false;
 
+    //game scene components
+    //timer
+    // ten times per second
+    float sendInterval = 1f / 10f;
+    float timer = 0f;
+    //cube rotation
+    public float cubeRot = 0f;
+    //game scene's cube
+    Transform theCube;
+
     //all log messages
     readonly List<string> m_log = new List<string>();
 
@@ -35,6 +48,15 @@ public class ClientNetworkManager : MonoBehaviour
 
     private void Awake()
     {
+        //ensure there's only one instance
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
         //so object is not deleted when scene changes
         DontDestroyOnLoad(gameObject);
 
@@ -64,6 +86,25 @@ public class ClientNetworkManager : MonoBehaviour
 
         //update canvas ui
         CanvasGui();
+
+        if (isPlaying)
+        {
+            //apply rotation
+            if(theCube != null) theCube.eulerAngles = new Vector3(0, cubeRot, 0);
+            //if playing --> send cube info
+            timer += Time.deltaTime;
+            if (timer >= sendInterval)
+            {
+                //send rotation
+                SendCubeRot(cubeRot);
+                timer = 0f;
+            }
+        }
+    }
+
+    public void RegisterCube(Transform cube)
+    {
+        theCube = cube;
     }
 
     void CanvasGui()
@@ -153,6 +194,10 @@ public class ClientNetworkManager : MonoBehaviour
         }
     }
 
+    public void SendCubeRot(float rot)
+    {
+        UDPconnection.SendString("THECUBE_" + rot.ToString());
+    }
     public void LoadGameScene()
     {
         SceneManager.LoadScene("Client_GameScene");

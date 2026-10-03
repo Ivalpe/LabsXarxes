@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 public class ClientUDP : MonoBehaviour
@@ -141,17 +142,34 @@ public class ClientUDP : MonoBehaviour
 
     void OnPacketReceived(byte[] data)
     {
+        string dataString = Encoding.UTF8.GetString(data);
+        //split string to check for commands
+        string[] splitString = dataString.Split('_');
+
         //check if what has been receieved is a command from server
         //if so --> dont show on screen
         bool isCommand = false;
+
+        if(splitString.Length > 0)
+        {
+            if (splitString[0] == "THECUBE")
+            {
+                if (float.TryParse(splitString[1], out float value))
+                {
+                    networkManager.cubeRot = value;
+                }
+
+                isCommand = true;
+            }
+        }
 
         if(Encoding.UTF8.GetString(data) == "STARTGAME")
         {
             //load game scene
             networkManager.LoadGameScene();
-        }
-        
-        if(!isCommand) Log(Encoding.UTF8.GetString(data));
+        } 
+
+        if (!isCommand) Log(Encoding.UTF8.GetString(data));
     }
 
     void StartThread(ThreadStart work)
