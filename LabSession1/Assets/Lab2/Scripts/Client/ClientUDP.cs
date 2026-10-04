@@ -183,6 +183,7 @@ public class ClientUDP : MonoBehaviour
     public void Log(string message)
     {
         Debug.Log(message);
+        //messages are logged by network manager
         if (networkManager != null)
         {
             networkManager.Log(message);

@@ -210,7 +210,8 @@ public class ClientTCP : MonoBehaviour
     public void Log(string message)
     {
         Debug.Log(message);
-        if(networkManager != null)
+        //messages are logged by network manager
+        if (networkManager != null)
         {
             networkManager.Log(message);
         }

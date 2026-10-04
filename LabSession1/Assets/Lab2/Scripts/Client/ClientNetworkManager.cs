@@ -196,11 +196,14 @@ public class ClientNetworkManager : MonoBehaviour
 
     public void SendCubeRot(float rot)
     {
-        UDPconnection.SendString("THECUBE_" + rot.ToString());
+        //send current cube rotation 
+        if (isHost) UDPconnection.SendString("THECUBE_" + rot.ToString());
     }
     public void LoadGameScene()
     {
+        //load the game scene
         SceneManager.LoadScene("Client_GameScene");
+        //make sure all players are set to playing (even if not host)
         isPlaying = true;
     }
 
