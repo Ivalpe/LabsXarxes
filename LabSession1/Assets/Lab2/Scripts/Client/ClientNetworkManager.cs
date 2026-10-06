@@ -113,7 +113,7 @@ public class ClientNetworkManager : MonoBehaviour
             if(pingTimer >= pingInterval)
             {
                 UDPconnection.SendString("PING");
-                timer = 0f;
+                pingTimer = 0f;
             }
         }
     }
@@ -128,10 +128,10 @@ public class ClientNetworkManager : MonoBehaviour
         if(Canvas_userList != null)
         {
             //display user list
-            Canvas_userList.text = "User List:";
+            Canvas_userList.text = "User List:\n";
             foreach (var user in usersList)
             {
-                if (user != null) Canvas_userList.text += (user);
+                if (user != null) Canvas_userList.text += (user + "\n");
             }
         }
     }

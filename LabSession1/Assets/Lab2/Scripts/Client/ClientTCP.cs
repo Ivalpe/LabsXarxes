@@ -163,12 +163,6 @@ public class ClientTCP : MonoBehaviour
                 //add to list of users
                 networkManager.usersList.Add(splitString[1]);
                 isCommand = true;
-            } 
-            else if (splitString[0] == "LISTDELETE")
-            {
-                //remove from list of users
-                networkManager.usersList.Remove(splitString[1]);
-                isCommand = true;
             } else if (splitString[0] == "ALLLIST")
             {
                 //if list is already full --> clear it to replace with newly received list

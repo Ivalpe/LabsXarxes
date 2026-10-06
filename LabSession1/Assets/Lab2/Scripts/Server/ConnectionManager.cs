@@ -53,7 +53,7 @@ public class ConnectionManager : MonoBehaviour
     void OnGUI()
     {
         GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-        GUILayout.Label("SERVER   port " + portTcp + "   name " + serverName);
+        GUILayout.Label("SERVER   name " + serverName);
 
         if (!ctpc.IsRunning && !cudp.IsRunning)
         {

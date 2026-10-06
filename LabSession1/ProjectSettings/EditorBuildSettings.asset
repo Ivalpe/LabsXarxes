@@ -15,7 +15,7 @@ EditorBuildSettings:
     path: Assets/Lab2/Scenes/Client_GameScene.unity
     guid: 257fe66014dcedd4ea88b453a6776b2a
   - enabled: 0
-    path: Assets/Lab2/Scenes/S_TCP_Server.unity
+    path: Assets/Lab2/Scenes/Server.unity
     guid: f9e63c3d3d2c7444c9b163a855bdbdc4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

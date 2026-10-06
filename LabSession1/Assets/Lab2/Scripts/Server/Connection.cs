@@ -29,7 +29,10 @@ public class Connection : MonoBehaviour
     ConnectionType connectionType;
     Socket socket;
     public Dictionary<Socket, string> usersConnected = new Dictionary<Socket, string>();
-    public Dictionary<Socket, string> lastConnection = new Dictionary<Socket, string>();
+
+    //handle pings (UDP)
+    readonly Dictionary<EndPoint, float> udpPings = new Dictionary<EndPoint, float>();
+    float maxTime = 5f;
 
     readonly List<Socket> m_clients = new List<Socket>(); //TCP Clients
     readonly HashSet<EndPoint> m_knownClients = new HashSet<EndPoint>(); //UDP Clients
@@ -39,12 +42,12 @@ public class Connection : MonoBehaviour
     readonly ConcurrentQueue<PacketTCP> m_inboxTCP = new ConcurrentQueue<PacketTCP>();
     readonly HashSet<int> m_warned = new HashSet<int>();
     volatile bool m_running;
+
+    //client host handling
     bool host = false;
+    Socket hostSocket;
 
     float velocityRotation = 0.5f;
-
-    public List<float> timers = new List<float>();
-    float maxTime = 5f;
 
     public bool IsRunning { get { return m_running; } }
     public int ClientCount { get { lock (m_knownClients) return m_knownClients.Count; } }
@@ -76,25 +79,26 @@ public class Connection : MonoBehaviour
         // Check for inactive clients
         if (connectionType == ConnectionType.UDP)
         {
-            List<Socket> disconnectedClients = new List<Socket>();
-            foreach (var user in usersConnected)
+            List<EndPoint> disconnectedClients = new List<EndPoint>();
+            List<EndPoint> activeClients = new List<EndPoint>(udpPings.Keys);
+
+            foreach (var user in activeClients)
             {
-                if (lastConnection.ContainsKey(user.Key))
+                udpPings[user] += Time.deltaTime;
+
+                //if timer hits 5s --> user is disconnected
+                if (udpPings[user] >= maxTime)
                 {
-                    DateTime lastPingTime = DateTime.Parse(lastConnection[user.Key]);
-                    TimeSpan timeSinceLastPing = DateTime.Now - lastPingTime;
-                    if (timeSinceLastPing.TotalSeconds > maxTime)
-                    {
-                        disconnectedClients.Add(user.Key);
-                    }
+                    disconnectedClients.Add(user);
                 }
             }
-            foreach (var client in disconnectedClients)
+
+            foreach (var user in disconnectedClients)
             {
-                Log("[SERVER] " + usersConnected[client] + " disconnected due to inactivity");
-                usersConnected.Remove(client);
-                lastConnection.Remove(client);
-                CloseSocket(client);
+                //remove disconnected clients from lists
+                udpPings.Remove(user);
+                lock (m_knownClients) m_knownClients.Remove(user);
+                Log("[SERVER] Client disconnected due to inactivity: " + user);
             }
         }
 
@@ -140,6 +144,7 @@ public class Connection : MonoBehaviour
             if (socket != null) { try { socket.Close(); } catch { } socket = null; }
 
             lock (m_knownClients) m_knownClients.Clear();
+            udpPings.Clear();
 
             Thread[] threads;
             lock (m_threads) { threads = m_threads.ToArray(); m_threads.Clear(); }
@@ -296,29 +301,76 @@ public class Connection : MonoBehaviour
     void ClientThread(Socket client)
     {
         ReceiveLoopTCP(client);
-        lock (m_clients) m_clients.Remove(client);
-        Log("[SERVER] " + usersConnected[client] + " disconnected");
 
-        foreach (var user in usersConnected)
-        {
-            SendStringTCP("LISTREMOVE_" + usersConnected[client], user.Key);
-            Debug.Log("LISTREMOVE_" + usersConnected[client]);
-        }
+        bool noHost = false;
+        string clientName = "";
+        List<Socket> remainingClients = new List<Socket>();
+        string updatedClientList = "";
 
-        //Close all users if host leaves
-        if (client == usersConnected.First().Key)
+        lock (usersConnected)
         {
-            foreach (var user in usersConnected)
+            //check if user disconnected is host
+            if (client == hostSocket) noHost = true;
+
+            // remove disconnected client from list
+            if (usersConnected.TryGetValue(client, out clientName))
             {
-                CloseSocket(user.Key);
+                usersConnected.Remove(client);
             }
-            usersConnected.Clear();
+
+            if (noHost)
+            {
+                hostSocket = null;
+                host = false;
+
+                //if host is gone --> prepare list of clients to disconnect
+                remainingClients = new List<Socket>(usersConnected.Keys);
+                usersConnected.Clear();
+            }
+            else
+            {
+                //create new user list (after removing disconnected user)
+                var names = new List<string>();
+                foreach (var name in usersConnected.Values)
+                {
+                    if (!string.IsNullOrEmpty(name)) names.Add(name);
+                }
+                updatedClientList = string.Join("_", names);
+
+                //get all remaining sockets
+                remainingClients = new List<Socket>(usersConnected.Keys);
+
+                //if no users --> no host user
+                if (usersConnected.Count == 0)
+                {
+                    host = false;
+                    hostSocket = null;
+                }
+            }
         }
 
-        usersConnected.Remove(client);
+        lock (m_clients)
+        {
+            m_clients.Remove(client);
+            if (noHost) m_clients.Clear();
+        }
 
-        if (usersConnected.Count == 0) host = false;
+        Log("[SERVER] " + clientName + " disconnected");
 
+        if (noHost)
+        {
+            //kick everyone if host is gone
+            foreach (var otherClient in remainingClients) CloseSocket(otherClient);
+        }
+        else
+        {
+            //send updated user list
+            Debug.Log("ALLLIST_" + updatedClientList);
+            foreach (var user in remainingClients)
+            {
+                SendStringTCP("ALLLIST_" + updatedClientList, user);
+            }
+        }
 
         CloseSocket(client);
     }
@@ -364,8 +416,6 @@ public class Connection : MonoBehaviour
             if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
             {
                 usersConnected[from] = text;
-                // Add the last time the user ping the server
-                lastConnection.Add(from, DateTime.Now.ToString());
 
                 String allUsers = string.Join("_", usersConnected.Values);
 
@@ -390,6 +440,7 @@ public class Connection : MonoBehaviour
                 if (!host)
                 {
                     SendStringTCP("H", user.Key);
+                    hostSocket = from;
                     host = true;
                 }
 
@@ -403,7 +454,15 @@ public class Connection : MonoBehaviour
 
     void OnPacketReceivedUDP(byte[] data, EndPoint from)
     {
+        //if communication is received --> reset ping timer (and add it to pings list, if first packet received)
+        udpPings[from] = 0f;
+
         string text = Encoding.UTF8.GetString(data);
+
+        // if its just a ping --> return
+        // (dont show on screen to not flood with ping messages and be able to monitor server better)
+        if (text == "PING") return;
+
         Log("[SERVER] Received: " + text + " from " + from);
 
         if (text == "STARTGAME")
@@ -420,19 +479,6 @@ public class Connection : MonoBehaviour
             float rotation = float.Parse(splitArray[1]) + velocityRotation; ;
             foreach (var user in m_knownClients)
                 SendStringUDP("THECUBE_" + rotation, user);
-        }
-
-        // Register the ping from the client to update the last connection time
-        if (splitArray[0] == "PING")
-        {
-            foreach (var user in usersConnected)
-            {
-                if (user.Key.RemoteEndPoint.ToString() == from.ToString())
-                {
-                    lastConnection[user.Key] = DateTime.Now.ToString();
-                    break;
-                }
-            }
         }
 
         bool isNew;
