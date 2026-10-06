@@ -29,6 +29,7 @@ public class Connection : MonoBehaviour
     ConnectionType connectionType;
     Socket socket;
     public Dictionary<Socket, string> usersConnected = new Dictionary<Socket, string>();
+    public Dictionary<Socket, string> lastConnection = new Dictionary<Socket, string>();
 
     readonly List<Socket> m_clients = new List<Socket>(); //TCP Clients
     readonly HashSet<EndPoint> m_knownClients = new HashSet<EndPoint>(); //UDP Clients
@@ -41,6 +42,9 @@ public class Connection : MonoBehaviour
     bool host = false;
 
     float velocityRotation = 0.5f;
+
+    public List<float> timers = new List<float>();
+    float maxTime = 5f;
 
     public bool IsRunning { get { return m_running; } }
     public int ClientCount { get { lock (m_knownClients) return m_knownClients.Count; } }
@@ -68,6 +72,32 @@ public class Connection : MonoBehaviour
             while (m_inboxUDP.TryDequeue(out packet))
                 OnPacketReceivedUDP(packet.data, packet.from);
         }
+
+        // Check for inactive clients
+        if (connectionType == ConnectionType.UDP)
+        {
+            List<Socket> disconnectedClients = new List<Socket>();
+            foreach (var user in usersConnected)
+            {
+                if (lastConnection.ContainsKey(user.Key))
+                {
+                    DateTime lastPingTime = DateTime.Parse(lastConnection[user.Key]);
+                    TimeSpan timeSinceLastPing = DateTime.Now - lastPingTime;
+                    if (timeSinceLastPing.TotalSeconds > maxTime)
+                    {
+                        disconnectedClients.Add(user.Key);
+                    }
+                }
+            }
+            foreach (var client in disconnectedClients)
+            {
+                Log("[SERVER] " + usersConnected[client] + " disconnected due to inactivity");
+                usersConnected.Remove(client);
+                lastConnection.Remove(client);
+                CloseSocket(client);
+            }
+        }
+
     }
 
     void Start()
@@ -334,6 +364,9 @@ public class Connection : MonoBehaviour
             if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
             {
                 usersConnected[from] = text;
+                // Add the last time the user ping the server
+                lastConnection.Add(from, DateTime.Now.ToString());
+
                 String allUsers = string.Join("_", usersConnected.Values);
 
                 foreach (var user in usersConnected)
@@ -389,7 +422,20 @@ public class Connection : MonoBehaviour
                 SendStringUDP("THECUBE_" + rotation, user);
         }
 
-            bool isNew;
+        // Register the ping from the client to update the last connection time
+        if (splitArray[0] == "PING")
+        {
+            foreach (var user in usersConnected)
+            {
+                if (user.Key.RemoteEndPoint.ToString() == from.ToString())
+                {
+                    lastConnection[user.Key] = DateTime.Now.ToString();
+                    break;
+                }
+            }
+        }
+
+        bool isNew;
         lock (m_knownClients) isNew = m_knownClients.Add(from);
         if (isNew) Log("[SERVER] New client: " + from);
 
