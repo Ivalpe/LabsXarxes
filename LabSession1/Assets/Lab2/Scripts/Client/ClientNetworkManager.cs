@@ -17,6 +17,10 @@ public class ClientNetworkManager : MonoBehaviour
     //canvas ui components
     [SerializeField] TMP_Text Canvas_userList;
 
+    //ping timer (UDP)
+    float pingInterval = 1f;
+    float pingTimer = 0f;
+
     //user list 
     public List<string> usersList = new List<string>();
 
@@ -80,9 +84,8 @@ public class ClientNetworkManager : MonoBehaviour
 
     private void Update()
     {
-        //check if network is still up for both --> disconnect other to avoid issues
-        if(!TCPconnection.IsRunning && UDPconnection.IsRunning) UDPconnection.Disconnect();
-        else if (TCPconnection.IsRunning && !UDPconnection.IsRunning) TCPconnection.Disconnect();
+        //send ping by UDP
+        ManagePing();
 
         //update canvas ui
         CanvasGui();
@@ -97,6 +100,19 @@ public class ClientNetworkManager : MonoBehaviour
             {
                 //send rotation
                 SendCubeRot(cubeRot);
+                timer = 0f;
+            }
+        }
+    }
+
+    public void ManagePing()
+    {
+        if (UDPconnection.IsRunning)
+        {
+            pingTimer += Time.deltaTime;
+            if(pingTimer >= pingInterval)
+            {
+                UDPconnection.SendString("PING");
                 timer = 0f;
             }
         }

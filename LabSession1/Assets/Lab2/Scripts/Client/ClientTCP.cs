@@ -171,10 +171,13 @@ public class ClientTCP : MonoBehaviour
                 isCommand = true;
             } else if (splitString[0] == "ALLLIST")
             {
+                //if list is already full --> clear it to replace with newly received list
+                if(networkManager.usersList.Count > 0) networkManager.usersList.Clear();
+                
                 //add all users already in server to user list
                 for(int i = 1; i < splitString.Length; i++)
                 {
-                    networkManager.usersList.Add(splitString[1]);
+                    networkManager.usersList.Add(splitString[i]);
                 }
                 isCommand = true;
             }
