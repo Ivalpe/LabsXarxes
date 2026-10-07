@@ -41,5 +41,5 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * Ivan Alvarez - [Ivalpe](https://github.com/Ivalpe)
 * Lara Guevara - [LaraGuevara](https://github.com/LaraGuevara)
 * Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
-* Maria Bezora - [mariabeo](https://github.com/mariabeo)
+* Maria Besora - [mariabeo](https://github.com/mariabeo)
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
