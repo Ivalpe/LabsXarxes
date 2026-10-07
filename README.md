@@ -38,8 +38,8 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * To run locally on the same device, run both executables before connecting to the server
 
 ## Team
-* Ivan Alvarez - Ivalpe
-* Lara Guevara - LaraGuevara
-* Bernat Loza - BerniF0x
-* Maria Bezora - mariabeo
-* Kai Caire - KaiCaire
+* Ivan Alvarez - [Ivalpe](https://github.com/Ivalpe)
+* Lara Guevara - [LaraGuevara](https://github.com/LaraGuevara)
+* Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
+* Maria Bezora - [mariabeo](https://github.com/mariabeo)
+* Kai Caire - [KaiCaire](https://github.com/KaiCaire)
