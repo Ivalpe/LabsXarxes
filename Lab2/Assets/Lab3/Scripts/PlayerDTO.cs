@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 // Challenge 1 (slide 15)
 [Serializable]

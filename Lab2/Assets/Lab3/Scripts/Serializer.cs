@@ -41,8 +41,15 @@ public static class Serializer
         MemoryStream stream = new MemoryStream();
         BinaryWriter writer = new BinaryWriter(stream);
 
-        // your code here
-        Todo.NotDone(1, "Serialize(PlayerDTO) writes nothing yet");
+        writer.Write(dto.playerName);
+        writer.Write(dto.level);
+        writer.Write(dto.ownedPokemons.Count);
+
+        foreach (var pokemon in dto.ownedPokemons)
+        {
+            writer.Write(pokemon);
+
+        }
 
         return stream.ToArray();
     }
@@ -58,8 +65,11 @@ public static class Serializer
         PlayerDTO dto = new PlayerDTO();
         dto.ownedPokemons = new List<string>();
 
-        // your code here
-        Todo.NotDone(2, "DeserializePlayerDTO() reads nothing yet");
+        dto.playerName = reader.ReadString();
+        dto.level = reader.ReadInt32();
+        int count = reader.ReadInt32();
+        for (int i = 0; i < count; i++)
+            dto.ownedPokemons.Add(reader.ReadString());
 
         return dto;
     }
@@ -73,8 +83,15 @@ public static class Serializer
         MemoryStream stream = new MemoryStream();
         BinaryWriter writer = new BinaryWriter(stream);
 
-        // your code here
-        Todo.NotDone(3, "Serialize(PlayerDTO2) writes nothing yet");
+        writer.Write(dto.playerName);
+        writer.Write(dto.level);
+        writer.Write(dto.ownedPokemons.Count);
+
+        foreach (var pokemon in dto.ownedPokemons)
+        {
+            writer.Write(pokemon.name);
+
+        }
 
         return stream.ToArray();
     }
@@ -88,8 +105,16 @@ public static class Serializer
         PlayerDTO2 dto = new PlayerDTO2();
         dto.ownedPokemons = new List<Pokemon>();
 
-        // your code here
-        Todo.NotDone(4, "DeserializePlayerDTO2() reads nothing yet");
+        dto.playerName = reader.ReadString();
+        dto.level = reader.ReadInt32();
+        int count = reader.ReadInt32();
+        for (int i = 0; i < count; i++)
+        {
+            Pokemon pk = new Pokemon();
+            pk.name = reader.ReadString();
+            dto.ownedPokemons.Add(pk);
+
+        }
 
         return dto;
     }
@@ -101,14 +126,16 @@ public static class Serializer
     //  Test scene when it works:  JSON is 90 bytes, binary is 31
     public static byte[] ToJson(PlayerDTO2 dto)
     {
-        Todo.NotDone(5, "ToJson() returns nothing yet");
-        return null;
+        string json = JsonUtility.ToJson(dto);
+        byte[] bytes = Encoding.UTF8.GetBytes(json);
+
+        return bytes;
     }
 
     public static PlayerDTO2 FromJson(byte[] data)
     {
-        Todo.NotDone(5, "FromJson() returns nothing yet");
-        return new PlayerDTO2();
+        PlayerDTO2 back = JsonUtility.FromJson<PlayerDTO2>(Encoding.UTF8.GetString(data));
+        return back;
     }
 
     // =============================================================================================
