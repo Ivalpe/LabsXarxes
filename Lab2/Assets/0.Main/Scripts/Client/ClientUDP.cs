@@ -142,34 +142,7 @@ public class ClientUDP : MonoBehaviour
 
     void OnPacketReceived(byte[] data)
     {
-        string dataString = Encoding.UTF8.GetString(data);
-        //split string to check for commands
-        string[] splitString = dataString.Split('_');
-
-        //check if what has been receieved is a command from server
-        //if so --> dont show on screen
-        bool isCommand = false;
-
-        if(splitString.Length > 0)
-        {
-            if (splitString[0] == "THECUBE")
-            {
-                if (float.TryParse(splitString[1], out float value))
-                {
-                    networkManager.cubeRot = value;
-                }
-
-                isCommand = true;
-            }
-        }
-
-        if(Encoding.UTF8.GetString(data) == "STARTGAME")
-        {
-            //load game scene
-            networkManager.LoadGameScene();
-        } 
-
-        if (!isCommand) Log(Encoding.UTF8.GetString(data));
+        networkManager.serializer.Deserialize(data);
     }
 
     void StartThread(ThreadStart work)
@@ -229,7 +202,7 @@ public class ClientUDP : MonoBehaviour
     //  Console when it works: the server prints  [SERVER] Received: Player
     void OnStarted()
     {
-        SendString(userName);   // no Connect: this first message IS the handshake
+        SendPacket(networkManager.serializer.SerializeText(userName, MainSerializer.CommandType.ConnectedUDP));   // no Connect: this first message IS the handshake
     }
 
     // --------------------------------------------------------------------------------- TODO 4 ---

@@ -4,11 +4,15 @@ using UnityEngine;
 using TMPro;
 using Unity.VectorGraphics;
 using UnityEngine.SceneManagement;
+using static MainSerializer;
 
 public class ClientNetworkManager : MonoBehaviour
 {
     //static reference (for changing scenes)
     public static ClientNetworkManager Instance { get; private set; }
+
+    //serializer
+    public BaseSerializer serializer;
 
     //connections for the manager to access
     ClientTCP TCPconnection;
@@ -69,6 +73,9 @@ public class ClientNetworkManager : MonoBehaviour
 
         //get udp component
         UDPconnection = GetComponent<ClientUDP>();
+
+        //create serializer
+        serializer = new ClientSerializer(this);
     }
 
     private void Start()
@@ -112,7 +119,7 @@ public class ClientNetworkManager : MonoBehaviour
             pingTimer += Time.deltaTime;
             if(pingTimer >= pingInterval)
             {
-                UDPconnection.SendString("PING");
+                UDPconnection.SendPacket(serializer.SerializeTypes(true));
                 pingTimer = 0f;
             }
         }
@@ -167,7 +174,7 @@ public class ClientNetworkManager : MonoBehaviour
                 //chat text UI
                 text = GUILayout.TextField(text, GUILayout.Width(120));
                 //send chat message to server (using TCP)
-                if (GUILayout.Button("Send", GUILayout.Width(110))) TCPconnection.SendString(text);
+                if (GUILayout.Button("Send", GUILayout.Width(110))) TCPconnection.SendPacket(serializer.SerializeText(text));
                 //if host --> play button
                 if (isHost)
                 {
@@ -206,14 +213,14 @@ public class ClientNetworkManager : MonoBehaviour
         if (isHost)
         {
             //send server the command to start the game
-            UDPconnection.SendString("STARTGAME");
+            UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
         }
     }
 
     public void SendCubeRot(float rot)
     {
         //send current cube rotation 
-        if (isHost) UDPconnection.SendString("THECUBE_" + rot.ToString());
+        if (isHost) UDPconnection.SendPacket(serializer.SerializeCubeRot(cubeRot));
     }
     public void LoadGameScene()
     {

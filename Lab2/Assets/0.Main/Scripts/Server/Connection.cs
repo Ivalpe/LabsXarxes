@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using static MainSerializer;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class Connection : MonoBehaviour
 {
@@ -17,6 +19,7 @@ public class Connection : MonoBehaviour
     }
 
     ConnectionManager connectionManager;
+    BaseSerializer serializer;
 
     public int port;
     public string serverName = "MyServer";
@@ -59,6 +62,11 @@ public class Connection : MonoBehaviour
     public void SetType(ConnectionType ct)
     {
         connectionType = ct;
+    }
+
+    public HashSet<EndPoint> GetUDPClients()
+    {
+        return m_knownClients;
     }
 
     void Update()
@@ -111,6 +119,7 @@ public class Connection : MonoBehaviour
         //if (autoStart) StartNetwork();
 
         connectionManager = GetComponent<ConnectionManager>();
+        serializer = connectionManager.serializer;
     }
 
     void ParseCommandLine()
@@ -305,7 +314,7 @@ public class Connection : MonoBehaviour
         bool noHost = false;
         string clientName = "";
         List<Socket> remainingClients = new List<Socket>();
-        string updatedClientList = "";
+        List<string> updatedClientList = new List<string>();
 
         lock (usersConnected)
         {
@@ -330,12 +339,10 @@ public class Connection : MonoBehaviour
             else
             {
                 //create new user list (after removing disconnected user)
-                var names = new List<string>();
                 foreach (var name in usersConnected.Values)
                 {
-                    if (!string.IsNullOrEmpty(name)) names.Add(name);
+                    if (!string.IsNullOrEmpty(name)) updatedClientList.Add(name);
                 }
-                updatedClientList = string.Join("_", names);
 
                 //get all remaining sockets
                 remainingClients = new List<Socket>(usersConnected.Keys);
@@ -364,11 +371,10 @@ public class Connection : MonoBehaviour
         }
         else
         {
-            //send updated user list
-            Debug.Log("ALLLIST_" + updatedClientList);
-            foreach (var user in remainingClients)
+            foreach (var user in usersConnected)
             {
-                SendStringTCP("ALLLIST_" + updatedClientList, user);
+                //send user list
+                SendPacketTCP(serializer.SerializeUserList(updatedClientList), user.Key);
             }
         }
 
@@ -409,46 +415,42 @@ public class Connection : MonoBehaviour
     }
     void OnPacketReceivedTCP(byte[] data, Socket from)
     {
-        string text = Encoding.UTF8.GetString(data);
+        serializer.Deserialize(data, from);
+    }
 
-        if (connectionType == ConnectionType.TCP)
+    public void TCPSendChatMessage(Socket from, string text)
+    {
+        string chatText = "[" + usersConnected[from] + "]: " + text;
+
+        foreach (var user in usersConnected)
         {
-            if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
-            {
-                usersConnected[from] = text;
+            SendPacketTCP(serializer.SerializeText(chatText), user.Key);
+        }
 
-                String allUsers = string.Join("_", usersConnected.Values);
+        Log(chatText);
+    }
 
-                foreach (var user in usersConnected)
-                {
-                    //Check if is the last user to join, if so send the list of users to all users
-                    if (user.Key == usersConnected.Last().Key)
-                    {
-                        SendStringTCP("ALLLIST_" + allUsers, user.Key);
-                        Debug.Log("ALLLIST_" + allUsers);
-                    }
-                    else
-                    {
-                        SendStringTCP("LISTADD_" + text, user.Key);
-                        Debug.Log("LISTADD_" + text);
-                    }
-                }
-            }
+    public void TCPNewUser(Socket from, string name)
+    {
+        if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
+        {
+            usersConnected[from] = name;
+            List<string> users = new List<string>(usersConnected.Values);
+            String allUsers = string.Join("_", usersConnected.Values);
 
             foreach (var user in usersConnected)
             {
-                if (!host)
-                {
-                    SendStringTCP("H", user.Key);
-                    hostSocket = from;
-                    host = true;
-                }
-
-                SendStringTCP("[" + usersConnected[from] + "]: " + text, user.Key);
+                //send user list
+                SendPacketTCP(serializer.SerializeUserList(users), user.Key);
             }
+        }
 
-            Log("[" + usersConnected[from] + "]: " + text);
-
+        if (!host)
+        {
+            //send host command to make user host
+            SendPacketTCP(serializer.SerializeTypes(false, CommandType.Host), from);
+            host = true;
+            hostSocket = from;
         }
     }
 
@@ -457,35 +459,41 @@ public class Connection : MonoBehaviour
         //if communication is received --> reset ping timer (and add it to pings list, if first packet received)
         udpPings[from] = 0f;
 
-        string text = Encoding.UTF8.GetString(data);
+        serializer.Deserialize(data, null, from);
+    }
 
-        // if its just a ping --> return
-        // (dont show on screen to not flood with ping messages and be able to monitor server better)
-        if (text == "PING") return;
-
-        Log("[SERVER] Received: " + text + " from " + from);
-
-        if (text == "STARTGAME")
-        {
-            //Load a new scene for all clients
-            foreach (var user in m_knownClients)
-                SendStringUDP("STARTGAME", user);
-        }
-
-        // Send rotation to all clients
-        string[] splitArray = text.Split(char.Parse("_"));
-        if (splitArray[0] == "THECUBE")
-        {
-            float rotation = float.Parse(splitArray[1]) + velocityRotation; ;
-            foreach (var user in m_knownClients)
-                SendStringUDP("THECUBE_" + rotation, user);
-        }
-
+    public void RegisterUDPClient(EndPoint from)
+    {
         bool isNew;
-        lock (m_knownClients) isNew = m_knownClients.Add(from);
-        if (isNew) Log("[SERVER] New client: " + from);
+        lock (m_knownClients)
+        {
+            isNew = m_knownClients.Add(from);
+        }
 
-        SendStringUDP(serverName, from);
+        if (isNew)
+        {
+            Log("[SERVER] New UDP client: " + from);
+        }
+
+        byte[] response = serializer.SerializeText(serverName, CommandType.ConnectedUDP);
+        SendPacketUDP(response, from);
+    }
+
+    public void UDPUpdateCube(float rot)
+    {
+        float rotation = rot + velocityRotation;
+        foreach(var user in m_knownClients)
+        {
+            SendPacketUDP(serializer.SerializeCubeRot(rotation), user);
+        }
+    }
+
+    public void UDPStartGame()
+    {
+        foreach (var user in m_knownClients)
+        {
+            SendPacketUDP(serializer.SerializeTypes(false, CommandType.StartGame), user);
+        }
     }
     public void SendStringTCP(string text, Socket to)
     {

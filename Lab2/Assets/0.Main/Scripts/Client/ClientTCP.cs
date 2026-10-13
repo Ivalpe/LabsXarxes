@@ -148,45 +148,7 @@ public class ClientTCP : MonoBehaviour
 
     void OnPacketReceived(byte[] data)
     {
-        string dataString = Encoding.UTF8.GetString(data);
-        //split string to check for commands
-        string[] splitString = dataString.Split('_');
-
-        //check if what has been receieved is a command from server
-        //if so --> dont show on screen
-        bool isCommand = false;
-
-        if(splitString.Length > 0)
-        {
-            if (splitString[0] == "LISTADD")
-            {
-                //add to list of users
-                networkManager.usersList.Add(splitString[1]);
-                isCommand = true;
-            } else if (splitString[0] == "ALLLIST")
-            {
-                //if list is already full --> clear it to replace with newly received list
-                if(networkManager.usersList.Count > 0) networkManager.usersList.Clear();
-                
-                //add all users already in server to user list
-                for(int i = 1; i < splitString.Length; i++)
-                {
-                    networkManager.usersList.Add(splitString[i]);
-                }
-                isCommand = true;
-            }
-        }
-        
-        if (Encoding.UTF8.GetString(data) == "H")
-        {
-            //set user as host
-            networkManager.isHost = true;
-            Log("You are this server's Host.");
-        }
-        else
-        {
-            if(!isCommand) Log(Encoding.UTF8.GetString(data));
-        }
+        networkManager.serializer.Deserialize(data);
     }
 
     void StartThread(ThreadStart work)
@@ -245,7 +207,7 @@ public class ClientTCP : MonoBehaviour
     //  Console when it works: the server prints  [SERVER] Received: Player
     void OnConnected()
     {
-        SendString(userName);
+        SendPacket(networkManager.serializer.SerializeText(userName, MainSerializer.CommandType.ConnectedTCP));
     }
 
     // --------------------------------------------------------------------------------- TODO 3 ---

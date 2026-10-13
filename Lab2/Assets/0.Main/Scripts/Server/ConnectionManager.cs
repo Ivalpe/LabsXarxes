@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static MainSerializer;
 
 public class ConnectionManager : MonoBehaviour
 {
 
     public Connection ctpc;
     public Connection cudp;
+
+    //serializer
+    public BaseSerializer serializer;
 
     public int portTcp = 9050;
     public int portUdp = 9051;
@@ -37,6 +41,9 @@ public class ConnectionManager : MonoBehaviour
         //set udp connection type
         cudp.SetType(Connection.ConnectionType.UDP);
         cudp.SetPort(portUdp);
+
+        //create serializer
+        serializer = new ServerSerializer(this);
     }
 
     void ParseCommandLine()
