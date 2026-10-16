@@ -52,6 +52,11 @@ public class Connection : MonoBehaviour
 
     float velocityRotation = 0.5f;
 
+
+    //State puzzle
+    bool isPuzzleFinished = false;
+
+
     public bool IsRunning { get { return m_running; } }
     public int ClientCount { get { lock (m_knownClients) return m_knownClients.Count; } }
     public void SetPort(int p)
@@ -438,10 +443,19 @@ public class Connection : MonoBehaviour
             List<string> users = new List<string>(usersConnected.Values);
             String allUsers = string.Join("_", usersConnected.Values);
 
-            foreach (var user in usersConnected)
+            if (!isPuzzleFinished)
             {
-                //send user list
-                SendPacketTCP(serializer.SerializeUserList(users), user.Key);
+                foreach (var user in usersConnected)
+                {
+                    //send user list
+                    SendPacketTCP(serializer.SerializeUserList(users), user.Key);
+                }
+            }
+            else //When the puzzle is already finished, late players bypass the lobby and load the game scene immediately
+            {
+                SendPacketTCP(serializer.SerializeUserList(users), from);
+                SendPacketTCP(serializer.SerializeTypes(false, CommandType.StartGame), from);
+
             }
         }
 
@@ -490,6 +504,9 @@ public class Connection : MonoBehaviour
 
     public void UDPStartGame()
     {
+        //Puzzle is finish
+        isPuzzleFinished = true;
+
         foreach (var user in m_knownClients)
         {
             SendPacketUDP(serializer.SerializeTypes(false, CommandType.StartGame), user);

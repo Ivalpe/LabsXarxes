@@ -104,6 +104,11 @@ public class ClientNetworkManager : MonoBehaviour
         //update canvas ui
         CanvasGui();
 
+        if(isHost && Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Puzzle is completed
+        {
+            UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
+        }
+
         if (isPlaying)
         {
             //apply rotation
