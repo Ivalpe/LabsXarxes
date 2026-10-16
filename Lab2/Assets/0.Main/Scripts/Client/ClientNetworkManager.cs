@@ -28,6 +28,13 @@ public class ClientNetworkManager : MonoBehaviour
     //user list 
     public List<string> usersList = new List<string>();
 
+
+    //Prefab player
+    [SerializeField] private GameObject playerPrefab;
+
+    //Control all playersPrefabs
+    public Dictionary<string, GameObject> spawnedPlayers = new Dictionary<string, GameObject>();
+
     //ui components
     public string serverIp = "127.0.0.1";
     public int port = 9050;
@@ -226,8 +233,12 @@ public class ClientNetworkManager : MonoBehaviour
     {
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
+
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnMultiplayerPlayers;
+
         //make sure all players are set to playing (even if not host)
         isPlaying = true;
+
     }
 
     public void Log(string message)
@@ -252,4 +263,42 @@ public class ClientNetworkManager : MonoBehaviour
             else if (args[i] == "-noautostart") autoStart = false;
         }
     }
+
+
+    public void SpawnMultiplayerPlayers(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnMultiplayerPlayers;
+
+        float spawnX = 0f;
+
+        for (int i = 0; i < usersList.Count; i++)
+        {
+            if (!string.IsNullOrEmpty(usersList[i])) 
+            {
+                GameObject instante_player = Instantiate(playerPrefab, new Vector3(spawnX,1f,0f), Quaternion.identity);
+
+                //Text name
+                TMPro.TextMeshProUGUI textNamePlayer = instante_player.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (textNamePlayer != null) textNamePlayer.text = usersList[i];
+
+                //Deactivate camera and movement for other players for don't share
+                if (usersList[i] != userName)
+                {
+                    Transform camaraRemota = instante_player.transform.Find("First Person Camera");
+                    if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
+
+                    FirstPersonMovement moverRemoto = instante_player.GetComponent<FirstPersonMovement>();
+                    if (moverRemoto != null) moverRemoto.enabled = false;
+                }
+
+                spawnedPlayers[usersList[i]] = instante_player;
+
+            }
+            
+
+            spawnX += 3f;
+        }
+
+    }
+
 }
