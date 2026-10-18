@@ -31,7 +31,7 @@ public class Connection : MonoBehaviour
     struct PacketTCP { public byte[] data; public Socket from; }
     ConnectionType connectionType;
     Socket socket;
-    public Dictionary<Socket, string> usersConnected = new Dictionary<Socket, string>();
+    public Dictionary<Socket, PlayerInfo> usersConnected = new Dictionary<Socket, PlayerInfo>();
 
     //handle pings (UDP)
     readonly Dictionary<EndPoint, float> udpPings = new Dictionary<EndPoint, float>();
@@ -55,6 +55,25 @@ public class Connection : MonoBehaviour
 
     //State puzzle
     bool isPuzzleFinished = false;
+
+    //player id handling
+    int nextClientId = 1;
+
+    //list of colors
+    private readonly List<Color> playerColors = new List<Color>
+    {
+        Color.red,
+        Color.blue,
+        Color.green,
+        Color.yellow,
+        Color.magenta,
+        Color.cyan
+    };
+    int nextColorIndex = 0;
+
+    //spawn position 
+    Vector3 playerSpawnPos = new Vector3(0f, 1f, 0f);
+    float playerSpawnXVar = 3f;
 
 
     public bool IsRunning { get { return m_running; } }
@@ -215,7 +234,15 @@ public class Connection : MonoBehaviour
                 lock (m_clients) m_clients.Add(client);
                 Log("[SERVER] Client connected: " + client.RemoteEndPoint);
 
-                usersConnected.Add(client, "");
+                //get assigned color
+                Color assignedColor = playerColors[nextColorIndex % playerColors.Count];
+                nextColorIndex++;
+
+                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one, assignedColor);
+                playerSpawnPos.x += playerSpawnXVar;
+                nextClientId++;
+
+                usersConnected.Add(client, clientPlayer);
 
                 Socket captured = client;
                 StartThread(delegate { ClientThread(captured); });
@@ -327,8 +354,12 @@ public class Connection : MonoBehaviour
             if (client == hostSocket) noHost = true;
 
             // remove disconnected client from list
-            if (usersConnected.TryGetValue(client, out clientName))
+            if (usersConnected.TryGetValue(client, out PlayerInfo clientPlayer))
             {
+                if(clientPlayer != null)
+                {
+                    clientName = clientPlayer.playerName;
+                }
                 usersConnected.Remove(client);
             }
 
@@ -344,9 +375,9 @@ public class Connection : MonoBehaviour
             else
             {
                 //create new user list (after removing disconnected user)
-                foreach (var name in usersConnected.Values)
+                foreach (var player in usersConnected.Values)
                 {
-                    if (!string.IsNullOrEmpty(name)) updatedClientList.Add(name);
+                    if (!string.IsNullOrEmpty(player.playerName)) updatedClientList.Add(player.playerName);
                 }
 
                 //get all remaining sockets
@@ -425,7 +456,7 @@ public class Connection : MonoBehaviour
 
     public void TCPSendChatMessage(Socket from, string text)
     {
-        string chatText = "[" + usersConnected[from] + "]: " + text;
+        string chatText = "[" + usersConnected[from].playerName + "]: " + text;
 
         foreach (var user in usersConnected)
         {
@@ -437,11 +468,16 @@ public class Connection : MonoBehaviour
 
     public void TCPNewUser(Socket from, string name)
     {
-        if (usersConnected.ContainsKey(from) && usersConnected[from] == "")
+        if (usersConnected.ContainsKey(from) && usersConnected[from].playerName == "")
         {
-            usersConnected[from] = name;
-            List<string> users = new List<string>(usersConnected.Values);
-            String allUsers = string.Join("_", usersConnected.Values);
+            usersConnected[from].playerName = name;
+
+            //send id to client
+            int assignedId = usersConnected[from].id;
+            SendPacketTCP(serializer.SerializePlayerId(assignedId), from);
+
+            List<string> users = new List<string>(usersConnected.Count);
+            foreach (var player in usersConnected.Values) users.Add(player.playerName);
 
             if (!isPuzzleFinished)
             {

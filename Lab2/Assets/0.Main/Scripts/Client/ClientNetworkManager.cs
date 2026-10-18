@@ -18,6 +18,9 @@ public class ClientNetworkManager : MonoBehaviour
     ClientTCP TCPconnection;
     ClientUDP UDPconnection;
 
+    //user/player id
+    public int userId;
+
     //canvas ui components
     [SerializeField] TMP_Text Canvas_userList;
 

@@ -27,7 +27,8 @@ public class MainSerializer : MonoBehaviour
         StartGame = 3,
         AddPlayer = 4,
         UserList = 5,
-        Host = 6
+        Host = 6,
+        AssignID = 7
     }
 
 
@@ -103,6 +104,19 @@ public class MainSerializer : MonoBehaviour
 
             return stream.ToArray();
         }
+        //for sending player ID
+        public byte[] SerializePlayerId(int id)
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            writer.Write((byte)MsgType.Command);
+            writer.Write((byte)CommandType.AssignID);
+
+            writer.Write(id);
+
+            return stream.ToArray();
+        }
 
         //DESERIALIZER 
         public abstract void Deserialize(byte[] data, Socket TCPfrom = null, EndPoint UDPfrom = null);
@@ -170,6 +184,9 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case CommandType.UserList:
                     HandleUserList(reader);
+                    break;
+                case CommandType.AssignID:
+                    networkManager.userId = reader.ReadInt32();
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");
