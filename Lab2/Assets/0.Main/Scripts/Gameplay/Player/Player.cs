@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+
 //using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -10,37 +12,38 @@ using static UnityEngine.GraphicsBuffer;
 public class Player : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    public enum TeamColor
-    {
-        RED, BLUE
-    }
 
-    public TeamColor tColor;
+    private readonly List<Color> playerColors = new List<Color>
+    {
+        Color.red,
+        Color.blue,
+        Color.green,
+        Color.yellow,
+        Color.magenta,
+        Color.cyan
+    };
+
+    public Color tColor;
     bool nearBoard = false;
     TubeTile tileScript;
 
 
 
-    Color tileRed = new Color(1, 0.6f, 0.6f, 1);
-    Color tileBlue = new Color(0.4f, 1, 1, 1); //normal "Color" is 0 to 1, not 0 to 255
+    Color tileRed = Color.red;
+    Color tileBlue = Color.blue;
 
     Material mat;
 
     void Start()
     {
-        //Debug.Log("Player Script Running");
-        mat = GetComponentInChildren<Renderer>().material;
+        //find the client network manager game object
+        ClientNetworkManager.Instance.RegisterPlayerScript(this);
 
-        if (tColor == TeamColor.RED)
-        {
-            
-            mat.SetColor("_Color", tileRed);
-        }
-        else if (tColor == TeamColor.BLUE)
-        {
-            
-            mat.SetColor("_Color", tileBlue);
-        }
+    }
+
+    public void SetPlayerColor(byte index)
+    {
+        tColor = playerColors[index];
     }
 
     // Update is called once per frame

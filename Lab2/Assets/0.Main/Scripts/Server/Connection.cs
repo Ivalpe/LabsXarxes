@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using NUnit.Framework;
 using UnityEngine;
 using static MainSerializer;
 using static UnityEngine.UIElements.UxmlAttributeDescription;
@@ -72,7 +73,7 @@ public class Connection : MonoBehaviour
     int nextColorIndex = 0;
 
     //spawn position 
-    Vector3 playerSpawnPos = new Vector3(0f, 1f, 0f);
+    Vector3 playerSpawnPos = new Vector3(0f, 0f, 0f);
     float playerSpawnXVar = 3f;
 
 
@@ -144,18 +145,6 @@ public class Connection : MonoBehaviour
 
         connectionManager = GetComponent<ConnectionManager>();
         serializer = connectionManager.serializer;
-    }
-
-    void ParseCommandLine()
-    {
-        string[] args = Environment.GetCommandLineArgs();
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "-port" && i + 1 < args.Length) int.TryParse(args[++i], out port);
-            else if (args[i] == "-name" && i + 1 < args.Length) serverName = args[++i];
-            else if (args[i] == "-autostart") autoStart = true;
-            else if (args[i] == "-noautostart") autoStart = false;
-        }
     }
 
     public void StartNetwork()
@@ -235,10 +224,10 @@ public class Connection : MonoBehaviour
                 Log("[SERVER] Client connected: " + client.RemoteEndPoint);
 
                 //get assigned color
-                Color assignedColor = playerColors[nextColorIndex % playerColors.Count];
+                byte colorIndex = (byte)(nextColorIndex % playerColors.Count);
                 nextColorIndex++;
 
-                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one, assignedColor);
+                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one, colorIndex, playerColors[colorIndex]);
                 playerSpawnPos.x += playerSpawnXVar;
                 nextClientId++;
 
@@ -360,6 +349,7 @@ public class Connection : MonoBehaviour
                 {
                     clientName = clientPlayer.playerName;
                 }
+                connectionManager.playerInfoDic.Remove(clientPlayer.id);
                 usersConnected.Remove(client);
             }
 
@@ -371,6 +361,7 @@ public class Connection : MonoBehaviour
                 //if host is gone --> prepare list of clients to disconnect
                 remainingClients = new List<Socket>(usersConnected.Keys);
                 usersConnected.Clear();
+                connectionManager.playerInfoDic.Clear();
             }
             else
             {
@@ -472,9 +463,10 @@ public class Connection : MonoBehaviour
         {
             usersConnected[from].playerName = name;
 
-            //send id to client
+            //send id to client and assign to id dictionary
             int assignedId = usersConnected[from].id;
             SendPacketTCP(serializer.SerializePlayerId(assignedId), from);
+            connectionManager.playerInfoDic[assignedId] = usersConnected[from];
 
             List<string> users = new List<string>(usersConnected.Count);
             foreach (var player in usersConnected.Values) users.Add(player.playerName);
@@ -538,14 +530,28 @@ public class Connection : MonoBehaviour
         }
     }
 
+    public void UDPSendToAllClients(byte[] packet)
+    {
+        foreach (var user in m_knownClients)
+        {
+            SendPacketUDP(packet, user);
+        }
+    }
+
     public void UDPStartGame()
     {
         //Puzzle is finish
         isPuzzleFinished = true;
 
+        connectionManager.isPlaying = true;
+        connectionManager.Log("[SERVER] Started playing.");
+
+        //get player list (for spawning prefabs)
+        List<PlayerInfo> list = new List<PlayerInfo>(connectionManager.playerInfoDic.Values);
+
         foreach (var user in m_knownClients)
         {
-            SendPacketUDP(serializer.SerializeTypes(false, CommandType.StartGame), user);
+            SendPacketUDP(serializer.SerializeWorldPos(list, true), user);
         }
     }
     public void SendStringTCP(string text, Socket to)

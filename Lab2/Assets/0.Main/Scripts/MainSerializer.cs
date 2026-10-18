@@ -15,7 +15,9 @@ public class MainSerializer : MonoBehaviour
         Ping = 1,
         Command = 2,
         Text = 3,
-        CubeRot = 4
+        Input = 4,
+        World = 5,
+        CubeRot = 6
     }
 
     //types of commands
@@ -117,6 +119,57 @@ public class MainSerializer : MonoBehaviour
 
             return stream.ToArray();
         }
+        //for sending player input
+        public byte[] SerializePlayerInput(int id, float hor, float ver, float yaw)
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            writer.Write((byte)MsgType.Input);
+
+            //send user id (so server knows what player is sending this input)
+            writer.Write(id);
+
+            writer.Write(hor);
+            writer.Write(ver);
+            writer.Write(yaw);
+
+            return stream.ToArray();
+        }
+        //for sending all player positions
+        public byte[] SerializeWorldPos(List<PlayerInfo> playerList, bool StartGame = false)
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            if(StartGame)
+            {
+                writer.Write((byte)MsgType.Command);
+                writer.Write((byte)CommandType.StartGame);
+            }
+            else writer.Write((byte)MsgType.World);
+
+            //write player count
+            writer.Write(playerList.Count);
+
+            foreach(var player in playerList)
+            {
+                //player id
+                writer.Write(player.id);
+                //if start game -> send player name too
+                if (StartGame) writer.Write(player.playerName);
+                //player position
+                writer.Write(player.position.x);
+                writer.Write(player.position.y);
+                writer.Write(player.position.z);
+                //player orientation
+                writer.Write(player.rotation.y);
+                //if start game -> send player color too
+                if (StartGame) writer.Write(player.colorIndex);
+            }
+
+            return stream.ToArray();
+        }
 
         //DESERIALIZER 
         public abstract void Deserialize(byte[] data, Socket TCPfrom = null, EndPoint UDPfrom = null);
@@ -148,6 +201,9 @@ public class MainSerializer : MonoBehaviour
                 case MsgType.CubeRot:
                     networkManager.cubeRot = reader.ReadSingle();
                     break;
+                case MsgType.World:
+                    networkManager.OnWorldUpdate(reader);
+                    break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
                     break;
@@ -173,7 +229,7 @@ public class MainSerializer : MonoBehaviour
                     networkManager.Log("[CLIENT] UDP connection established with server: " + UDPserverName);
                     break;
                 case CommandType.StartGame:
-                    networkManager.LoadGameScene();
+                    networkManager.LoadGameScene(reader);
                     break;
                 case CommandType.Host:
                     networkManager.isHost = true;
@@ -187,6 +243,7 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case CommandType.AssignID:
                     networkManager.userId = reader.ReadInt32();
+                    networkManager.Log("[SERVER] Received unique user ID.");
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");
@@ -237,12 +294,28 @@ public class MainSerializer : MonoBehaviour
                     CommandType command = (CommandType)reader.ReadByte();
                     HandleCommand(command, reader, TCPfrom, UDPfrom);
                     break;
+                case MsgType.Input:
+                    HandleInput(reader);
+                    break;
                 case MsgType.CubeRot:
                     networkManager.cudp.UDPUpdateCube(reader.ReadSingle());
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
                     break;
+            }
+        }
+
+        public void HandleInput(BinaryReader reader)
+        { 
+            int id = reader.ReadInt32();
+            float hor = reader.ReadSingle();
+            float ver = reader.ReadSingle();
+            float yaw = reader.ReadSingle();
+
+            if (networkManager.playerInfoDic.TryGetValue(id, out PlayerInfo player))
+            {
+                player.SetInput(hor, ver, yaw);
             }
         }
 

@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using static MainSerializer;
 
 public class ConnectionManager : MonoBehaviour
 {
-
+    [SerializeField] GameObject playerPrefab;
+    
     public Connection ctpc;
     public Connection cudp;
 
@@ -17,6 +19,11 @@ public class ConnectionManager : MonoBehaviour
     public string serverName = "MyServer";
     public bool autoStart = true;
     readonly List<string> m_log = new List<string>();
+
+    //gameplay variables
+    public bool isPlaying = false;
+    public Dictionary<int, PlayerInfo> playerInfoDic = new Dictionary<int, PlayerInfo>();
+    public float speed = 5;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -44,6 +51,37 @@ public class ConnectionManager : MonoBehaviour
 
         //create serializer
         serializer = new ServerSerializer(this);
+    }
+
+    private void FixedUpdate()
+    {
+        if (isPlaying)
+        {
+            float dt = Time.fixedDeltaTime;
+
+            //update for each player
+            foreach(var entry in playerInfoDic)
+            {
+                PlayerInfo player = entry.Value;
+                if (player == null) continue;
+
+                //calculate move direction
+                Quaternion yawRot = Quaternion.Euler(0, player.input.yawRot, 0);
+                Vector3 moveDir = (yawRot * Vector3.forward * player.input.vertical) +
+                                  (yawRot * Vector3.right * player.input.horizontal);
+
+                //add move to position
+                player.position += moveDir * speed * dt;
+                //set rotation
+                player.rotation = new Vector3(0, player.input.yawRot, 0);
+            }
+
+            //send world info to all users
+            List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
+            byte[] worldPacket = serializer.SerializeWorldPos(playerList);
+            cudp.UDPSendToAllClients(worldPacket);
+
+        }
     }
 
     void ParseCommandLine()

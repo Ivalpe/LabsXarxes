@@ -5,6 +5,7 @@ using TMPro;
 using Unity.VectorGraphics;
 using UnityEngine.SceneManagement;
 using static MainSerializer;
+using System.IO;
 
 public class ClientNetworkManager : MonoBehaviour
 {
@@ -15,8 +16,8 @@ public class ClientNetworkManager : MonoBehaviour
     public BaseSerializer serializer;
 
     //connections for the manager to access
-    ClientTCP TCPconnection;
-    ClientUDP UDPconnection;
+    public ClientTCP TCPconnection;
+    public ClientUDP UDPconnection;
 
     //user/player id
     public int userId;
@@ -31,12 +32,25 @@ public class ClientNetworkManager : MonoBehaviour
     //user list 
     public List<string> usersList = new List<string>();
 
+    //list of colors
+    private readonly List<Color> playerColors = new List<Color>
+    {
+        Color.red,
+        Color.blue,
+        Color.green,
+        Color.yellow,
+        Color.magenta,
+        Color.cyan
+    };
+
+    //List for initial user spawning
+    public List<PlayerInfo> playersToSpawn = new List<PlayerInfo>();
 
     //Prefab player
     [SerializeField] private GameObject playerPrefab;
 
     //Control all playersPrefabs
-    public Dictionary<string, GameObject> spawnedPlayers = new Dictionary<string, GameObject>();
+    public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
     //ui components
     public string serverIp = "127.0.0.1";
@@ -57,6 +71,9 @@ public class ClientNetworkManager : MonoBehaviour
     public float cubeRot = 0f;
     //game scene's cube
     Transform theCube;
+
+    //player component
+    Player playerComponent;
 
     //all log messages
     readonly List<string> m_log = new List<string>();
@@ -140,9 +157,44 @@ public class ClientNetworkManager : MonoBehaviour
         }
     }
 
+    public void OnWorldUpdate(BinaryReader reader)
+    {
+        int count = reader.ReadInt32();
+        for (int i = 0; i < count; i++)
+        {
+            //get id
+            int id = reader.ReadInt32();
+
+            //get position and turn to vector
+            float x = reader.ReadSingle();
+            float y = reader.ReadSingle();
+            float z = reader.ReadSingle();
+            Vector3 pos = new Vector3(x, y, z);
+
+            //get rotation value
+            float rotY = reader.ReadSingle();
+
+            if (spawnedPlayers.TryGetValue(id, out var player))
+            {
+                //check if id matches this users'
+                if (id == userId) player.transform.position = pos;
+                else
+                {
+                    player.transform.position = pos;
+                    player.transform.eulerAngles = new Vector3(0, rotY, 0);
+                }
+            }
+        }
+    }
+
     public void RegisterCube(Transform cube)
     {
         theCube = cube;
+    }
+
+    public void RegisterPlayerScript(Player comp)
+    {
+        playerComponent = comp;
     }
 
     void CanvasGui()
@@ -208,6 +260,8 @@ public class ClientNetworkManager : MonoBehaviour
 
                     //clear user list
                     usersList.Clear();
+                    playersToSpawn.Clear();
+                    spawnedPlayers.Clear();
                 }
             }
 
@@ -237,16 +291,39 @@ public class ClientNetworkManager : MonoBehaviour
         //send current cube rotation 
         if (isHost) UDPconnection.SendPacket(serializer.SerializeCubeRot(cubeRot));
     }
-    public void LoadGameScene()
+    public void LoadGameScene(BinaryReader reader)
     {
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
+
+        //get the list of players to spawn (with positions, names, colors...)
+        HandleToSpawnList(reader);
 
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnMultiplayerPlayers;
 
         //make sure all players are set to playing (even if not host)
         isPlaying = true;
 
+    }
+
+    public void HandleToSpawnList(BinaryReader reader)
+    {
+        int count = reader.ReadInt32();
+        for (int i = 0; i < count; i++)
+        {
+            int id = reader.ReadInt32();
+            string name = reader.ReadString();
+            float x = reader.ReadSingle();
+            float y = reader.ReadSingle();
+            float z = reader.ReadSingle();
+            Vector3 pos = new Vector3(x, y, z);
+            float rotY = reader.ReadSingle();
+            Vector3 rot = new Vector3(0, rotY, 0);
+            byte colorIndex = reader.ReadByte();
+
+            PlayerInfo player = new PlayerInfo(id, name, pos, rot, colorIndex);
+            playersToSpawn.Add(player);
+        }
     }
 
     public void Log(string message)
@@ -277,34 +354,40 @@ public class ClientNetworkManager : MonoBehaviour
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnMultiplayerPlayers;
 
-        float spawnX = 0f;
-
-        for (int i = 0; i < usersList.Count; i++)
+        foreach (var player in playersToSpawn)
         {
-            if (!string.IsNullOrEmpty(usersList[i])) 
+            Quaternion rotation = Quaternion.Euler(player.rotation);
+            GameObject instancePlayer = Instantiate(playerPrefab, player.position, rotation);
+
+            //Text name
+            TMPro.TextMeshProUGUI textNamePlayer = instancePlayer.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            if (textNamePlayer != null) textNamePlayer.text = player.playerName;
+
+            //material color
+            var renderer = instancePlayer.GetComponentInChildren<Renderer>();
+            Color color = playerColors[player.colorIndex];
+            if(renderer != null) renderer.material.SetColor("_Color", color);
+
+            //check if the user is this client
+            if (player.id != userId)
             {
-                GameObject instante_player = Instantiate(playerPrefab, new Vector3(spawnX,1f,0f), Quaternion.identity);
+                Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
+                if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
 
-                //Text name
-                TMPro.TextMeshProUGUI textNamePlayer = instante_player.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                if (textNamePlayer != null) textNamePlayer.text = usersList[i];
+                PlayerInput playerInput = instancePlayer.GetComponent<PlayerInput>();
+                if (playerInput != null) playerInput.enabled = false;
 
-                //Deactivate camera and movement for other players for don't share
-                if (usersList[i] != userName)
-                {
-                    Transform camaraRemota = instante_player.transform.Find("First Person Camera");
-                    if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
-
-                    FirstPersonMovement moverRemoto = instante_player.GetComponent<FirstPersonMovement>();
-                    if (moverRemoto != null) moverRemoto.enabled = false;
-                }
-
-                spawnedPlayers[usersList[i]] = instante_player;
-
+                Player playerScript = instancePlayer.GetComponent<Player>();
+                if (playerScript != null) playerScript.enabled = false;
             }
-            
+            else
+            {
+                //assign color to player script
+                if(playerComponent != null) playerComponent.SetPlayerColor(player.colorIndex);
+            }
 
-            spawnX += 3f;
+            //add to dictionary
+            spawnedPlayers[player.id] = instancePlayer;
         }
 
     }
