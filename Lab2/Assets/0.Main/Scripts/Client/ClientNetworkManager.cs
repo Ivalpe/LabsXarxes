@@ -329,6 +329,7 @@ public class ClientNetworkManager : MonoBehaviour
             float yVel = reader.ReadSingle();
             byte colorIndex = reader.ReadByte();
 
+
             PlayerInfo player = new PlayerInfo(id, name, pos, rot, yVel, colorIndex);
             playersToSpawn.Add(player);
         }

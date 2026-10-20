@@ -120,7 +120,7 @@ public class MainSerializer : MonoBehaviour
             return stream.ToArray();
         }
         //for sending player input
-        public byte[] SerializePlayerInput(int id, float hor, float ver, float yaw, bool jump, bool grounded)
+        public byte[] SerializePlayerInput(int id, float hor, float ver, float yaw, bool jump)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -135,7 +135,7 @@ public class MainSerializer : MonoBehaviour
             writer.Write(yaw);
 
             writer.Write(jump);
-            writer.Write(grounded);
+            //writer.Write(grounded);
             
 
             return stream.ToArray();
@@ -168,6 +168,7 @@ public class MainSerializer : MonoBehaviour
                 writer.Write(player.position.z);
                 //player orientation
                 writer.Write(player.rotation.y);
+                writer.Write(player.yVelocity);
                 //if start game -> send player color too
                 if (StartGame) writer.Write(player.colorIndex);
             }
@@ -234,6 +235,7 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case CommandType.StartGame:
                     networkManager.LoadGameScene(reader);
+                   
                     break;
                 case CommandType.Host:
                     networkManager.isHost = true;
@@ -276,7 +278,7 @@ public class MainSerializer : MonoBehaviour
         ConnectionManager networkManager;
         public ServerSerializer(ConnectionManager manager)
         {
-            networkManager = manager;
+            networkManager = manager; // this is the server
         }
         
         public override void Deserialize(byte[] data, Socket TCPfrom = null, EndPoint UDPfrom = null)
@@ -318,12 +320,12 @@ public class MainSerializer : MonoBehaviour
             float yaw = reader.ReadSingle();
 
             bool jump = reader.ReadBoolean();
-            bool grounded = reader.ReadBoolean();
+            //bool grounded = reader.ReadBoolean();
            
 
             if (networkManager.playerInfoDic.TryGetValue(id, out PlayerInfo player))
             {
-                player.SetInput(hor, ver, yaw, jump, grounded);
+                player.SetInput(hor, ver, yaw, jump /*grounded*/);
             }
         }
 

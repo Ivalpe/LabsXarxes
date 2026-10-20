@@ -9,11 +9,12 @@ public class AutoBuilder
 {
     static readonly string rootBuildFolder = "../../AutomatedBuilds";
     static readonly string scenesDir = "Assets/0.Main/Scenes/";
-    
+
 
     private static string[] serverScenesNames = new string[]
     {
-         "Server.unity"
+         "Server.unity",
+         "Client_GameScene.unity"
     };
 
     private static readonly string[] clientScenesNames = new string[]

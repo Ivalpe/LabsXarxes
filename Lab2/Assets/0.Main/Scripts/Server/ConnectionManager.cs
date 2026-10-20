@@ -18,6 +18,8 @@ public class ConnectionManager : MonoBehaviour
     public int portUdp = 9051;
     public string serverName = "MyServer";
     public bool autoStart = true;
+
+    bool changedScene = false;
     readonly List<string> m_log = new List<string>();
 
     //gameplay variables
@@ -31,6 +33,8 @@ public class ConnectionManager : MonoBehaviour
     bool isPlayerGrounded = true;
 
     float maxRayCastDist = 0.15f;
+
+    Collider floorCollider;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -64,14 +68,24 @@ public class ConnectionManager : MonoBehaviour
     {
         if (isPlaying)
         {
-            float dt = Time.fixedDeltaTime;
-           
 
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Client_GameScene" && !changedScene)
+            {
+                SceneManager.LoadScene("Client_GameScene"); //we need to change the scene in order to perform raycasts from the server side
+                changedScene = true;
+            }
+            float dt = Time.fixedDeltaTime;
+
+            
             //update for each player
             foreach(var entry in playerInfoDic)
             {
+                bool isGrounded = false;
+                
                 PlayerInfo player = entry.Value;
                 if (player == null) continue;
+
+                
 
                 //calculate move direction
                 Quaternion yawRot = Quaternion.Euler(0, player.input.yawRot, 0);
@@ -83,28 +97,32 @@ public class ConnectionManager : MonoBehaviour
                 //set rotation
                 player.rotation = new Vector3(0, player.input.yawRot, 0);
 
+                player.yVelocity += Physics.gravity.y * gravityScale * dt;
 
-
-                if (player.input.grounded && velocity < 0)
+                
+                if (IsGrounded(player, out floorCollider) && player.yVelocity < 0)
                 {
-                    velocity = 0;
-                    
-                    isPlayerGrounded = true;
+                    player.yVelocity = 0;
+                    player.position.y = floorCollider.ClosestPoint(player.position).y;
+
+                    isGrounded = true;
                 }
                 else
                 {
-                    isPlayerGrounded = false;
+                    isGrounded = false;
                 }
 
-                if (player.input.jump && isPlayerGrounded)
+                if (player.input.jump && isGrounded)
                 {
-                    velocity += Physics.gravity.y * gravityScale * dt;
-                    velocity = Mathf.Sqrt(-2 * (Physics.gravity.y * gravityScale) * maxJumpHeight);
-                    player.input.jump = false;
-                    player.input.grounded = false;
+
+                    player.yVelocity = Mathf.Sqrt(-2 * (Physics.gravity.y * gravityScale) * maxJumpHeight);
+                    //player.input.jump = false;
+                    //player.input.grounded = false;
+                    //isPlayerGrounded = IsGrounded(player, out Collider col); //
                 }
 
-                player.position += (new Vector3(0, velocity, 0 ) * dt);
+                player.position += (new Vector3(0, player.yVelocity, 0 ) * dt);
+                
             }
 
             //send world info to all users
@@ -115,7 +133,32 @@ public class ConnectionManager : MonoBehaviour
         }
     }
 
-   
+    bool IsGrounded(PlayerInfo player, out Collider floorCollider)
+    {
+
+        Vector3 pos = new Vector3(player.position.x, player.position.y, player.position.z);
+
+        //Raising origin slightly so the ray starts INSIDE the body and avoids ground intersection
+        float originOffset = 0.2f;
+        Vector3 raycastOrigin = pos + Vector3.up * originOffset;
+
+        //raycast dist = offset + ground check range
+        float distanceThreshold = 0.5f;
+        float raycastDistance = distanceThreshold + originOffset;
+        Debug.DrawRay(raycastOrigin, Vector3.down, Color.red);
+
+        if (Physics.Raycast(raycastOrigin, Vector3.down, out RaycastHit hit, raycastDistance))
+        {
+            // Ignore hitting the player's own collider if raycast originates inside it
+            if (hit.collider != null && !hit.collider.transform.IsChildOf(transform))
+            {
+                floorCollider = hit.collider;   
+                return true;
+            }
+        }
+        floorCollider = null;
+        return false;
+    }
 
     void ParseCommandLine()
     {

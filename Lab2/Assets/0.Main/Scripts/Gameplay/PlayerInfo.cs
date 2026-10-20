@@ -72,13 +72,13 @@ public class PlayerInfo
         colorIndex = index;
     }
 
-    public void SetInput(float hor, float vet, float yaw, bool jump, bool grounded)
+    public void SetInput(float hor, float vet, float yaw, bool jump/*, bool grounded*/)
     {
         input.horizontal = hor;
         input.vertical = vet;
         input.yawRot = yaw;
         input.jump = jump;
-        input.grounded = grounded;
+        //input.grounded = grounded;
     }
 
 }
@@ -90,7 +90,7 @@ public class PlayerMoveInput
     public float yawRot;
 
     public bool jump;
-    public bool grounded;
+    //public bool grounded;
 
     public PlayerMoveInput()
     {
@@ -98,7 +98,7 @@ public class PlayerMoveInput
         vertical = 0;
         yawRot = 0;
         jump = false;
-        grounded = false;
+        //grounded = false;
     }
     
 }

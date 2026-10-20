@@ -52,12 +52,6 @@ public class PlayerInput : MonoBehaviour
             sendJump = true;
         }
 
-
-        if (IsGrounded())
-        {
-            sendGrounded = true;
-        }
-
         //if (jump)
         //{
         //    Debug.Log("Pressed Space");
@@ -66,34 +60,11 @@ public class PlayerInput : MonoBehaviour
         //bool clicked = Input.GetMouseButtonDown(0);
 
         //send by UDP
-        byte[] inputPacket = networkManager.serializer.SerializePlayerInput(networkManager.userId, horizontal, vertical, yawRotation, sendJump, sendGrounded);
+        byte[] inputPacket = networkManager.serializer.SerializePlayerInput(networkManager.userId, horizontal, vertical, yawRotation, sendJump);
         networkManager.UDPconnection.SendPacket(inputPacket);
         sendJump = false;
-        sendGrounded = IsGrounded();
+        
     }
 
-    bool IsGrounded()
-    {
 
-        Vector3 pos = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-
-        //Raising origin slightly so the ray starts INSIDE the body and avoids ground intersection
-        float originOffset = 0.2f;
-        Vector3 raycastOrigin = pos + Vector3.up * originOffset;
-
-        //raycast dist = offset + ground check range
-        float distanceThreshold = 0.5f;
-        float raycastDistance = distanceThreshold + originOffset;
-        Debug.DrawRay(raycastOrigin, Vector3.down, Color.red);
-
-        if (Physics.Raycast(raycastOrigin, Vector3.down, out RaycastHit hit, raycastDistance))
-        {
-            // Ignore hitting the player's own collider if raycast originates inside it
-            if (hit.collider != null && !hit.collider.transform.IsChildOf(transform))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 }
