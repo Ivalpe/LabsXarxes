@@ -15,7 +15,14 @@ Lógica puzzle
 
 
 Aufgaben
-- Player (raycast)
-- Spawn Player 2+
-- Tablero lógica 
-- Movimientos player que lo cambie el server
+- Player (raycast) ------> Hecho
+- Spawn Player 2+ ---------->Hecho
+- Tablero lógica ---> Iván
+- Movimientos player que lo cambie el server --> Hecho falta salto (no es obligatorio)
+- Billboard --> Bernant
+- Interactuar con las tiles y qe lo vean todos --> Kai
+- Que el servidor mueva un objeto -->Jana
+
+(Muy extra)
+- Ponerlo bonito
+- Música
