@@ -165,6 +165,9 @@ public class Connection : MonoBehaviour
             // No Shutdown() here: UDP has no connection to shut down.
             if (socket != null) { try { socket.Close(); } catch { } socket = null; }
 
+
+           // PlayerInfo //He comentado esto
+
             lock (m_knownClients) m_knownClients.Clear();
             udpPings.Clear();
 
@@ -227,7 +230,7 @@ public class Connection : MonoBehaviour
                 byte colorIndex = (byte)(nextColorIndex % playerColors.Count);
                 nextColorIndex++;
 
-                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one, colorIndex, playerColors[colorIndex]);
+                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one,0.0f, colorIndex, playerColors[colorIndex]);
                 playerSpawnPos.x += playerSpawnXVar;
                 nextClientId++;
 
