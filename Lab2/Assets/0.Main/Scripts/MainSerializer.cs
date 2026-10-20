@@ -120,7 +120,7 @@ public class MainSerializer : MonoBehaviour
             return stream.ToArray();
         }
         //for sending player input
-        public byte[] SerializePlayerInput(int id, float hor, float ver, float yaw)
+        public byte[] SerializePlayerInput(int id, float hor, float ver, float yaw, bool jump, bool grounded)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -133,6 +133,10 @@ public class MainSerializer : MonoBehaviour
             writer.Write(hor);
             writer.Write(ver);
             writer.Write(yaw);
+
+            writer.Write(jump);
+            writer.Write(grounded);
+            
 
             return stream.ToArray();
         }
@@ -313,9 +317,13 @@ public class MainSerializer : MonoBehaviour
             float ver = reader.ReadSingle();
             float yaw = reader.ReadSingle();
 
+            bool jump = reader.ReadBoolean();
+            bool grounded = reader.ReadBoolean();
+           
+
             if (networkManager.playerInfoDic.TryGetValue(id, out PlayerInfo player))
             {
-                player.SetInput(hor, ver, yaw);
+                player.SetInput(hor, ver, yaw, jump, grounded);
             }
         }
 

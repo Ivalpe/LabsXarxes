@@ -24,6 +24,13 @@ public class ConnectionManager : MonoBehaviour
     public bool isPlaying = false;
     public Dictionary<int, PlayerInfo> playerInfoDic = new Dictionary<int, PlayerInfo>();
     public float speed = 5;
+    float velocity = 0;
+    public float gravityScale = 1;
+    public float maxJumpHeight = 3;
+
+    bool isPlayerGrounded = true;
+
+    float maxRayCastDist = 0.15f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -58,6 +65,7 @@ public class ConnectionManager : MonoBehaviour
         if (isPlaying)
         {
             float dt = Time.fixedDeltaTime;
+           
 
             //update for each player
             foreach(var entry in playerInfoDic)
@@ -74,6 +82,29 @@ public class ConnectionManager : MonoBehaviour
                 player.position += moveDir * speed * dt;
                 //set rotation
                 player.rotation = new Vector3(0, player.input.yawRot, 0);
+
+
+
+                if (player.input.grounded && velocity < 0)
+                {
+                    velocity = 0;
+                    
+                    isPlayerGrounded = true;
+                }
+                else
+                {
+                    isPlayerGrounded = false;
+                }
+
+                if (player.input.jump && isPlayerGrounded)
+                {
+                    velocity += Physics.gravity.y * gravityScale * dt;
+                    velocity = Mathf.Sqrt(-2 * (Physics.gravity.y * gravityScale) * maxJumpHeight);
+                    player.input.jump = false;
+                    player.input.grounded = false;
+                }
+
+                player.position += (new Vector3(0, velocity, 0 ) * dt);
             }
 
             //send world info to all users
@@ -83,6 +114,8 @@ public class ConnectionManager : MonoBehaviour
 
         }
     }
+
+   
 
     void ParseCommandLine()
     {

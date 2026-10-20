@@ -25,7 +25,7 @@ public class ClientNetworkManager : MonoBehaviour
     //canvas ui components
     [SerializeField] TMP_Text Canvas_userList;
 
-    //ping timer (UDP)
+    //ping timer (UDP)jump
     float pingInterval = 1f;
     float pingTimer = 0f;
 
@@ -171,8 +171,14 @@ public class ClientNetworkManager : MonoBehaviour
             float z = reader.ReadSingle();
             Vector3 pos = new Vector3(x, y, z);
 
+           float yVel = reader.ReadSingle();
+
             //get rotation value
             float rotY = reader.ReadSingle();
+
+            
+
+            
 
             if (spawnedPlayers.TryGetValue(id, out var player))
             {
@@ -319,9 +325,10 @@ public class ClientNetworkManager : MonoBehaviour
             Vector3 pos = new Vector3(x, y, z);
             float rotY = reader.ReadSingle();
             Vector3 rot = new Vector3(0, rotY, 0);
+            float yVel = reader.ReadSingle();
             byte colorIndex = reader.ReadByte();
 
-            PlayerInfo player = new PlayerInfo(id, name, pos, rot, colorIndex);
+            PlayerInfo player = new PlayerInfo(id, name, pos, rot, yVel, colorIndex);
             playersToSpawn.Add(player);
         }
     }
