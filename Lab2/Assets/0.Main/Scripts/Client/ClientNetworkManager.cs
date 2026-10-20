@@ -62,6 +62,9 @@ public class ClientNetworkManager : MonoBehaviour
     public bool autoStart = false;
     public bool isHost = false;
 
+    //variable door
+    public float currentDoorOpening = 0.0f;
+
     //game scene components
     //timer
     // ten times per second
@@ -191,6 +194,11 @@ public class ClientNetworkManager : MonoBehaviour
                     //player.yVelocity = yVel;
                 }
             }
+        }
+
+        if (reader.BaseStream.Position < reader.BaseStream.Length)
+        {
+            currentDoorOpening = reader.ReadSingle();
         }
     }
 

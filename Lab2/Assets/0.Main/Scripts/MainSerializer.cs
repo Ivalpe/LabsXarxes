@@ -141,7 +141,7 @@ public class MainSerializer : MonoBehaviour
             return stream.ToArray();
         }
         //for sending all player positions
-        public byte[] SerializeWorldPos(List<PlayerInfo> playerList, bool StartGame = false)
+        public byte[] SerializeWorldPos(List<PlayerInfo> playerList, bool StartGame = false, float doorOpening=5.0f)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -171,6 +171,11 @@ public class MainSerializer : MonoBehaviour
                 writer.Write(player.yVelocity);
                 //if start game -> send player color too
                 if (StartGame) writer.Write(player.colorIndex);
+            }
+
+            if (!StartGame)
+            {
+                writer.Write(doorOpening);
             }
 
             return stream.ToArray();

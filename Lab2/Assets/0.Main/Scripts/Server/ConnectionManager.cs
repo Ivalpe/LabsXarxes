@@ -36,6 +36,17 @@ public class ConnectionManager : MonoBehaviour
 
     Collider floorCollider;
 
+
+    //door variables
+
+    private int doorType = 1;
+    public float doorOpening = 0.0f;
+    private float maxOpening = 5.0f;
+    private float speedOpen = 5.0f;
+    private float totalCloseTime = 60.0f;
+    private float timeRemaining = 60.0f;
+
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
     {
@@ -125,9 +136,33 @@ public class ConnectionManager : MonoBehaviour
                 
             }
 
+            if (doorType == 1) // Abriendo rápido
+            {
+                doorOpening += speedOpen * dt;
+                if (doorOpening >= maxOpening)
+                {
+                    doorOpening = maxOpening;
+                    doorType = 2; // Pasa a cerrar lento
+                }
+            }
+            else if (doorType == 2) // Cerrando lento
+            {
+                timeRemaining -= dt;
+                float progressPercentage = timeRemaining / totalCloseTime;
+                doorOpening = maxOpening * progressPercentage;
+
+                if (timeRemaining <= 0)
+                {
+                    timeRemaining = 0;
+                    doorOpening = 0.0f;
+                    doorType = 0; // Cerrada del todo
+                    //isDoorClosed = true;
+                }
+            }
+
             //send world info to all users
             List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
-            byte[] worldPacket = serializer.SerializeWorldPos(playerList);
+            byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening);
             cudp.UDPSendToAllClients(worldPacket);
 
         }
