@@ -2,21 +2,29 @@ using UnityEngine;
 
 public class Billboard : MonoBehaviour
 {
-    private Camera mainCamera;
+    private Transform camTransform;
 
     private void Start()
     {
-        // Busca la cámara principal del cliente actual
-        mainCamera = Camera.main;
+        // searches local manera (main)
+        if (Camera.main != null)
+        {
+            camTransform = Camera.main.transform;
+        }
     }
 
     private void LateUpdate()
     {
-        if (mainCamera != null)
+        // if camera destroys, search reference
+        if (camTransform == null && Camera.main != null)
         {
-            // Hace que el objeto mire hacia donde apunta la cámara
-            transform.LookAt(transform.position + mainCamera.transform.rotation * Vector3.forward,
-                             mainCamera.transform.rotation * Vector3.up);
+            camTransform = Camera.main.transform;
+        }
+
+        if (camTransform != null)
+        {
+            // canvas copies rotation from camera
+            transform.rotation = camTransform.rotation;
         }
     }
 }
