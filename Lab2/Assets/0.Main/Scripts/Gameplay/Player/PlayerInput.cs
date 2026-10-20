@@ -25,18 +25,26 @@ public class PlayerInput : MonoBehaviour
     void Update()
     {
         //only send player info on timer to avoid sending too many packages
+
+        if (Input.GetButtonDown("Jump"))
+        {
+           
+            SendPlayerInput(true);
+        }
+
         timer += Time.deltaTime;
         if (timer >= interval)
         {
-            SendPlayerInput();
+            SendPlayerInput(false);
             timer = 0f;
         }
         //Vector3 pos = transform.position;
         //Debug.DrawRay(pos, Vector3.down*0.5f, Color.red);
         
+
     }
 
-    void SendPlayerInput()
+    void SendPlayerInput(bool sendJump)
     {
         //get input axis
         float horizontal = Input.GetAxis("Horizontal"); // A (-1) | D (+1)
@@ -47,17 +55,6 @@ public class PlayerInput : MonoBehaviour
         if (cameraTransform != null) yawRotation = cameraTransform.eulerAngles.y;
         else yawRotation = transform.eulerAngles.y; //if no camera -> get transform to avoid errors
 
-        if (Input.GetButtonDown("Jump"))
-        {
-            sendJump = true;
-        }
-
-        //if (jump)
-        //{
-        //    Debug.Log("Pressed Space");
-        //}
-
-        //bool clicked = Input.GetMouseButtonDown(0);
 
         //send by UDP
         byte[] inputPacket = networkManager.serializer.SerializePlayerInput(networkManager.userId, horizontal, vertical, yawRotation, sendJump);

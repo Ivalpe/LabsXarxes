@@ -1,15 +1,30 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using static MainSerializer;
 
 public class ConnectionManager : MonoBehaviour
 {
     [SerializeField] GameObject playerPrefab;
-    
+
+    public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
+
+
+    public float jumpStr = 1000f;
     public Connection ctpc;
     public Connection cudp;
+
+    private readonly List<Color> playerColors = new List<Color>
+    {
+        Color.red,
+        Color.blue,
+        Color.green,
+        Color.yellow,
+        Color.magenta,
+        Color.cyan
+    };
 
     //serializer
     public BaseSerializer serializer;
@@ -33,6 +48,8 @@ public class ConnectionManager : MonoBehaviour
     bool isPlayerGrounded = true;
 
     float maxRayCastDist = 0.15f;
+
+
 
     Collider floorCollider;
 
@@ -81,11 +98,6 @@ public class ConnectionManager : MonoBehaviour
         if (isPlaying)
         {
 
-            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Client_GameScene" && !changedScene)
-            {
-                SceneManager.LoadScene("Client_GameScene"); //we need to change the scene in order to perform raycasts from the server side
-                changedScene = true;
-            }
             float dt = Time.fixedDeltaTime;
 
             
@@ -111,8 +123,20 @@ public class ConnectionManager : MonoBehaviour
 
                 player.yVelocity += Physics.gravity.y * gravityScale * dt;
 
-                
-                if (IsGrounded(player, out floorCollider) && player.yVelocity < 0)
+         
+
+                Rigidbody rb = null;
+                if (spawnedPlayers.TryGetValue(player.id, out GameObject playerObj))
+                {
+                    rb = playerObj.GetComponent<Rigidbody>();
+
+                    playerObj.transform.position = player.position;
+                    playerObj.transform.eulerAngles = player.rotation;
+                    playerObj.transform.localScale = player.scale;
+                }
+
+
+                if (IsGrounded(player, out floorCollider, playerObj) && player.yVelocity < 0)
                 {
                     player.yVelocity = 0;
                     player.position.y = floorCollider.ClosestPoint(player.position).y;
@@ -124,16 +148,20 @@ public class ConnectionManager : MonoBehaviour
                     isGrounded = false;
                 }
 
-                if (player.input.jump && isGrounded)
-                {
 
+
+                if (player.input.jump && isGrounded && rb)
+                {
+                    //rb.AddForce(Vector3.up * jumpStr, ForceMode.Force);
                     player.yVelocity = Mathf.Sqrt(-2 * (Physics.gravity.y * gravityScale) * maxJumpHeight);
-                    //player.input.jump = false;
-                    //player.input.grounded = false;
-                    //isPlayerGrounded = IsGrounded(player, out Collider col); //
+                    
                 }
 
-                player.position += (new Vector3(0, player.yVelocity, 0 ) * dt);
+                /*if (rb) */player.position += (new Vector3(0, player.yVelocity, 0 ) * dt);
+
+
+                //apply to server players
+                
                 
             }
 
@@ -170,24 +198,79 @@ public class ConnectionManager : MonoBehaviour
         }
     }
 
-    bool IsGrounded(PlayerInfo player, out Collider floorCollider)
+    public void SetUpGameScene()
+    {
+        //load the game scene
+        SceneManager.LoadScene("Client_GameScene");
+
+        DontDestroyOnLoad(Camera.main);
+
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
+
+        isPlaying = true;
+    }
+
+    public void SpawnServerPlayers(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnServerPlayers;
+
+        
+
+        List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);
+
+        foreach (var player in playersToSpawn)
+        {
+            Quaternion rotation = Quaternion.Euler(player.rotation);
+            GameObject instancePlayer = Instantiate(playerPrefab, player.position, rotation);
+
+            //Text name
+            TMPro.TextMeshProUGUI textNamePlayer = instancePlayer.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            if (textNamePlayer != null) textNamePlayer.text = player.playerName;
+
+            //material color
+            var renderer = instancePlayer.GetComponentInChildren<Renderer>();
+            Color color = playerColors[player.colorIndex];
+            if (renderer != null) renderer.material.SetColor("_Color", color);
+
+            //check if the user is this client
+
+
+            Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
+            if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
+
+            PlayerInput playerInput = instancePlayer.GetComponent<PlayerInput>();
+            if (playerInput != null) playerInput.enabled = false;
+
+            Player playerScript = instancePlayer.GetComponent<Player>();
+            if (playerScript != null) playerScript.enabled = false;
+
+            //add to dictionary
+            spawnedPlayers[player.id] = instancePlayer;
+        }
+
+
+
+    }
+
+
+    bool IsGrounded(PlayerInfo player, out Collider floorCollider, GameObject playerObj)
     {
 
         Vector3 pos = new Vector3(player.position.x, player.position.y, player.position.z);
 
         //Raising origin slightly so the ray starts INSIDE the body and avoids ground intersection
-        float originOffset = 0.2f;
+        float originOffset = 0.1f;
         Vector3 raycastOrigin = pos + Vector3.up * originOffset;
 
         //raycast dist = offset + ground check range
-        float distanceThreshold = 0.5f;
+        float distanceThreshold = 0.15f;
         float raycastDistance = distanceThreshold + originOffset;
-        Debug.DrawRay(raycastOrigin, Vector3.down, Color.red);
+        Debug.DrawRay(raycastOrigin, Vector3.down * raycastDistance, Color.red);
 
         if (Physics.Raycast(raycastOrigin, Vector3.down, out RaycastHit hit, raycastDistance))
         {
             // Ignore hitting the player's own collider if raycast originates inside it
-            if (hit.collider != null && !hit.collider.transform.IsChildOf(transform))
+            if (hit.collider != null && !hit.collider.transform.IsChildOf(playerObj.transform))
             {
                 floorCollider = hit.collider;   
                 return true;

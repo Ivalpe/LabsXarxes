@@ -548,8 +548,7 @@ public class Connection : MonoBehaviour
     {
         //Puzzle is finish
         isPuzzleFinished = true;
-
-        connectionManager.isPlaying = true;
+        connectionManager.SetUpGameScene();
         connectionManager.Log("[SERVER] Started playing.");
 
         connectionManager.ResetDoorState();
