@@ -171,14 +171,14 @@ public class ClientNetworkManager : MonoBehaviour
             float z = reader.ReadSingle();
             Vector3 pos = new Vector3(x, y, z);
 
-           float yVel = reader.ReadSingle();
+           
 
             //get rotation value
             float rotY = reader.ReadSingle();
 
-            
 
-            
+            float yVel = reader.ReadSingle();
+
 
             if (spawnedPlayers.TryGetValue(id, out var player))
             {
@@ -188,6 +188,7 @@ public class ClientNetworkManager : MonoBehaviour
                 {
                     player.transform.position = pos;
                     player.transform.eulerAngles = new Vector3(0, rotY, 0);
+                    //player.yVelocity = yVel;
                 }
             }
         }
