@@ -478,6 +478,9 @@ public class Connection : MonoBehaviour
             {
                 foreach (var user in usersConnected)
                 {
+                    Debug.Log("user: " + user.Value.playerName);
+
+
                     //send user list
                     SendPacketTCP(serializer.SerializeUserList(users), user.Key);
                 }
@@ -547,6 +550,7 @@ public class Connection : MonoBehaviour
         isPuzzleFinished = true;
 
         connectionManager.isPlaying = true;
+        connectionManager.doorType = 1;
         connectionManager.Log("[SERVER] Started playing.");
 
         //get player list (for spawning prefabs)

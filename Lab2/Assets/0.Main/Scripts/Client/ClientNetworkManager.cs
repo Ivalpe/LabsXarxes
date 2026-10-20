@@ -324,6 +324,12 @@ public class ClientNetworkManager : MonoBehaviour
     public void HandleToSpawnList(BinaryReader reader)
     {
         int count = reader.ReadInt32();
+
+        if (count <= 0) return;
+
+        playersToSpawn.Clear();
+        spawnedPlayers.Clear();
+
         for (int i = 0; i < count; i++)
         {
             int id = reader.ReadInt32();

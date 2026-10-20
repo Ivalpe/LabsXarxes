@@ -39,7 +39,7 @@ public class ConnectionManager : MonoBehaviour
 
     //door variables
 
-    private int doorType = 1;
+    public int doorType = 1;
     public float doorOpening = 0.0f;
     private float maxOpening = 5.0f;
     private float speedOpen = 5.0f;
@@ -50,6 +50,7 @@ public class ConnectionManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
     {
+        doorType = 1;
         ParseCommandLine();
 
         if (autoStart)
