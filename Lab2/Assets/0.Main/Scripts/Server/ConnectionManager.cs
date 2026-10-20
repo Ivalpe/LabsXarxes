@@ -41,7 +41,7 @@ public class ConnectionManager : MonoBehaviour
 
     public int doorType = 1;
     public float doorOpening = 0.0f;
-    private float maxOpening = 5.0f;
+    private float maxOpening = 1.0f;
     private float speedOpen = 5.0f;
     private float totalCloseTime = 60.0f;
     private float timeRemaining = 60.0f;
@@ -143,6 +143,7 @@ public class ConnectionManager : MonoBehaviour
                 if (doorOpening >= maxOpening)
                 {
                     doorOpening = maxOpening;
+                    timeRemaining = totalCloseTime;
                     doorType = 2; // Pasa a cerrar lento
                 }
             }
@@ -152,7 +153,7 @@ public class ConnectionManager : MonoBehaviour
                 float progressPercentage = timeRemaining / totalCloseTime;
                 doorOpening = maxOpening * progressPercentage;
 
-                if (timeRemaining <= 0)
+                if (timeRemaining <= 0 || doorOpening <= 0.0f)
                 {
                     timeRemaining = 0;
                     doorOpening = 0.0f;
@@ -236,5 +237,13 @@ public class ConnectionManager : MonoBehaviour
     {
         Debug.Log(message);
         lock (m_log) { m_log.Add(message); if (m_log.Count > 100) m_log.RemoveAt(0); }
+    }
+
+
+    public void ResetDoorState()
+    {
+       doorType = 1;
+       doorOpening = 0.0f;
+       timeRemaining = 60.0f;
     }
 }

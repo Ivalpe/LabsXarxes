@@ -550,8 +550,9 @@ public class Connection : MonoBehaviour
         isPuzzleFinished = true;
 
         connectionManager.isPlaying = true;
-        connectionManager.doorType = 1;
         connectionManager.Log("[SERVER] Started playing.");
+
+        connectionManager.ResetDoorState();
 
         //get player list (for spawning prefabs)
         List<PlayerInfo> list = new List<PlayerInfo>(connectionManager.playerInfoDic.Values);
