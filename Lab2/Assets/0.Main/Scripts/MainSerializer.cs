@@ -168,7 +168,7 @@ public class MainSerializer : MonoBehaviour
                 writer.Write(player.position.z);
                 //player orientation
                 writer.Write(player.rotation.y);
-                writer.Write(player.yVelocity);
+                //writer.Write(player.yVelocity);
                 //if start game -> send player color too
                 if (StartGame) writer.Write(player.colorIndex);
             }

@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using NUnit.Framework;
 using UnityEngine;
 using static MainSerializer;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class Connection : MonoBehaviour
 {
@@ -166,7 +163,7 @@ public class Connection : MonoBehaviour
             if (socket != null) { try { socket.Close(); } catch { } socket = null; }
 
 
-           // PlayerInfo //He comentado esto
+            // PlayerInfo //He comentado esto
 
             lock (m_knownClients) m_knownClients.Clear();
             udpPings.Clear();
@@ -230,7 +227,7 @@ public class Connection : MonoBehaviour
                 byte colorIndex = (byte)(nextColorIndex % playerColors.Count);
                 nextColorIndex++;
 
-                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one,0.0f, colorIndex, playerColors[colorIndex]);
+                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one,/*0.0f, */colorIndex, playerColors[colorIndex]);
                 playerSpawnPos.x += playerSpawnXVar;
                 nextClientId++;
 
@@ -348,7 +345,7 @@ public class Connection : MonoBehaviour
             // remove disconnected client from list
             if (usersConnected.TryGetValue(client, out PlayerInfo clientPlayer))
             {
-                if(clientPlayer != null)
+                if (clientPlayer != null)
                 {
                     clientName = clientPlayer.playerName;
                 }
@@ -530,7 +527,7 @@ public class Connection : MonoBehaviour
     public void UDPUpdateCube(float rot)
     {
         float rotation = rot + velocityRotation;
-        foreach(var user in m_knownClients)
+        foreach (var user in m_knownClients)
         {
             SendPacketUDP(serializer.SerializeCubeRot(rotation), user);
         }

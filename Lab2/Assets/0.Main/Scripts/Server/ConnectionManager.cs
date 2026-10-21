@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+using UnityEngine.XR;
 using static MainSerializer;
 
 public class ConnectionManager : MonoBehaviour
@@ -103,66 +104,51 @@ public class ConnectionManager : MonoBehaviour
             
             //update for each player
             foreach(var entry in playerInfoDic)
-            {
-                bool isGrounded = false;
-                
+            {                
                 PlayerInfo player = entry.Value;
                 if (player == null) continue;
 
+                if (!spawnedPlayers.TryGetValue(player.id, out GameObject playerObj) || playerObj == null) continue;
+                if (!playerObj.TryGetComponent(out Rigidbody rb)) continue;
                 
+                bool isGrounded = IsGrounded(playerObj);
 
                 //calculate move direction
                 Quaternion yawRot = Quaternion.Euler(0, player.input.yawRot, 0);
                 Vector3 moveDir = (yawRot * Vector3.forward * player.input.vertical) +
                                   (yawRot * Vector3.right * player.input.horizontal);
 
-                //add move to position
-                player.position += moveDir * speed * dt;
-                //set rotation
-                player.rotation = new Vector3(0, player.input.yawRot, 0);
+                Vector3 vel = rb.linearVelocity;
+                vel.x = moveDir.x * speed;
+                vel.z = moveDir.z * speed;
+                //vel.y while not jumping is already computed w physics & gravity
 
-                player.yVelocity += Physics.gravity.y * gravityScale * dt;
+               
 
-         
-
-                Rigidbody rb = null;
-                if (spawnedPlayers.TryGetValue(player.id, out GameObject playerObj))
-                {
-                    rb = playerObj.GetComponent<Rigidbody>();
-
-                    playerObj.transform.position = player.position;
-                    playerObj.transform.eulerAngles = player.rotation;
-                    playerObj.transform.localScale = player.scale;
-                }
-
-
-                if (IsGrounded(player, out floorCollider, playerObj) && player.yVelocity < 0)
-                {
-                    player.yVelocity = 0;
-                    player.position.y = floorCollider.ClosestPoint(player.position).y;
-
-                    isGrounded = true;
-                }
-                else
-                {
-                    isGrounded = false;
-                }
-
-
-
-                if (player.input.jump && isGrounded && rb)
-                {
-                    //rb.AddForce(Vector3.up * jumpStr, ForceMode.Force);
-                    player.yVelocity = Mathf.Sqrt(-2 * (Physics.gravity.y * gravityScale) * maxJumpHeight);
+                if (player.input.jump && isGrounded)
+                {     
+                    float jumpStr = Mathf.Sqrt(-2 * (Physics.gravity.y * gravityScale) * maxJumpHeight);
+                    rb.AddForce(Vector3.up * jumpStr, ForceMode.VelocityChange); 
+                    //forcemode.force is meant to be added overtime, it would only jump a tiny amount.
+                    //forcemode.velchange, on the contrary, is instantaneous and mass-independent
+                    player.input.jump = false; //consume the jump, like an event
                     
                 }
 
-                /*if (rb) */player.position += (new Vector3(0, player.yVelocity, 0 ) * dt);
-
-
-                //apply to server players
+                rb.linearVelocity = vel;
+                rb.MoveRotation(Quaternion.Euler(0, player.input.yawRot, 0)); 
+                //rb.freezerotation is set to true so contrary to the position, rb.rotation does need manual setup
                 
-                
+
+                //assign rb position and rotation to playerinfo since it adapted to object collisions
+                player.position = rb.position;
+                player.rotation = rb.rotation.eulerAngles;
+                //player.yVelocity = rb.linearVelocity.y;
+
+                //Debug.Log($"rb.position.y = {rb.position.y}, isGrounded? = {isGrounded}, player.yVelocity = {player.yVelocity} ");
+               
+               
+               
             }
 
             if (doorType == 1) // Abriendo rápido
@@ -214,7 +200,6 @@ public class ConnectionManager : MonoBehaviour
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnServerPlayers;
 
-        
 
         List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);
 
@@ -232,9 +217,15 @@ public class ConnectionManager : MonoBehaviour
             Color color = playerColors[player.colorIndex];
             if (renderer != null) renderer.material.SetColor("_Color", color);
 
-            //check if the user is this client
+            Rigidbody rb = instancePlayer.GetComponent<Rigidbody>();
+            if (rb)
+            {
+                rb.isKinematic = false; //make them dynamic, the server is the one to apply physics
+                rb.useGravity = true;
+                rb.constraints = RigidbodyConstraints.FreezeRotation; //will need manual setup in fixedupdate
+                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-
+            }
             Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
             if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
 
@@ -253,30 +244,32 @@ public class ConnectionManager : MonoBehaviour
     }
 
 
-    bool IsGrounded(PlayerInfo player, out Collider floorCollider, GameObject playerObj)
-    {
+    bool IsGrounded(GameObject playerObj)
+    { 
+        
+        if (!playerObj) return false;
+        if (!playerObj.TryGetComponent<Collider>(out Collider pCol)) return false;
+        
+        
+        Vector3 origin = pCol.bounds.center - new Vector3(0, pCol.bounds.extents.y - 0.1f, 0);
+        //slightly offset because starting at the exact bounds can cause errors due to floating point precision
+        float raycastDist = 0.2f;
+       
+        Debug.DrawRay(origin, Vector3.down * raycastDist, Color.red);
 
-        Vector3 pos = new Vector3(player.position.x, player.position.y, player.position.z);
+        RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, raycastDist, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore); 
+        // get ALL objects the player intersects (and ignore trigger colliders)
 
-        //Raising origin slightly so the ray starts INSIDE the body and avoids ground intersection
-        float originOffset = 0.1f;
-        Vector3 raycastOrigin = pos + Vector3.up * originOffset;
-
-        //raycast dist = offset + ground check range
-        float distanceThreshold = 0.15f;
-        float raycastDistance = distanceThreshold + originOffset;
-        Debug.DrawRay(raycastOrigin, Vector3.down * raycastDistance, Color.red);
-
-        if (Physics.Raycast(raycastOrigin, Vector3.down, out RaycastHit hit, raycastDistance))
+        foreach (var hit in hits)
         {
-            // Ignore hitting the player's own collider if raycast originates inside it
+            // Ignore the player's own collider
             if (hit.collider != null && !hit.collider.transform.IsChildOf(playerObj.transform))
             {
-                floorCollider = hit.collider;   
                 return true;
             }
         }
-        floorCollider = null;
+       
+        
         return false;
     }
 

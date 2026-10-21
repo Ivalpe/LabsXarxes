@@ -11,7 +11,7 @@ public class PlayerInfo
     public Vector3 rotation;
     public Vector3 scale;
 
-    public float yVelocity;
+    //public float yVelocity;
 
     
     public string playerName;
@@ -29,20 +29,20 @@ public class PlayerInfo
         position = Vector3.zero;
         rotation = Vector3.zero;
         scale = Vector3.one;
-        yVelocity = 0;
+        //yVelocity = 0;
         playerName = "Unknown";
         color = UnityEngine.Color.white;
         input = new PlayerMoveInput();
     }
 
-    public PlayerInfo(int i, string name, Vector3 pos, Vector3 rot, Vector3 sc, float yVel, byte index, UnityEngine.Color m_color)
+    public PlayerInfo(int i, string name, Vector3 pos, Vector3 rot, Vector3 sc,/* float yVel,*/ byte index, UnityEngine.Color m_color)
     {
         id = i; 
         playerName = name;
         position = pos;
         rotation = rot;
         scale = sc;
-        yVelocity = yVel;
+        //yVelocity = yVel;
         colorIndex = index;
         color = m_color;
         input = new PlayerMoveInput();
@@ -55,20 +55,20 @@ public class PlayerInfo
         position = p.position;
         rotation = p.rotation;
         scale = p.scale;
-        yVelocity = p.yVelocity;
+        //yVelocity = p.yVelocity;
         colorIndex = p.colorIndex;
         color = p.color;
         input = new PlayerMoveInput();
     }
 
     //for client start game player spawning
-    public PlayerInfo(int i, string name, Vector3 pos, Vector3 rot, float yVel, byte index)
+    public PlayerInfo(int i, string name, Vector3 pos, Vector3 rot,/* float yVel, */byte index)
     {
         id = i;
         playerName = name;
         position = pos;
         rotation = rot;
-        yVelocity = yVel;
+        //yVelocity = yVel;
         colorIndex = index;
     }
 

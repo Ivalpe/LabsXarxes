@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System.IO;
 using TMPro;
 using Unity.VectorGraphics;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using static MainSerializer;
-using System.IO;
+
 
 public class ClientNetworkManager : MonoBehaviour
 {
@@ -29,6 +30,10 @@ public class ClientNetworkManager : MonoBehaviour
     float pingInterval = 1f;
     float pingTimer = 0f;
 
+    //Vector3 targetPos = Vector3.zero;
+    //Quaternion targetRot = Quaternion.identity;
+
+
     //user list 
     public List<string> usersList = new List<string>();
 
@@ -48,7 +53,7 @@ public class ClientNetworkManager : MonoBehaviour
 
     //Prefab player
     [SerializeField] private GameObject playerPrefab;
-
+    
     //Control all playersPrefabs
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
@@ -117,6 +122,8 @@ public class ClientNetworkManager : MonoBehaviour
             TCPconnection.StartNetwork(serverIp, userName, TCPport);
             UDPconnection.StartNetwork(serverIp, userName, UDPport);
         }
+
+        
     }
 
     private void Update()
@@ -127,7 +134,7 @@ public class ClientNetworkManager : MonoBehaviour
         //update canvas ui
         CanvasGui();
 
-        if(isHost && Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Puzzle is completed
+        if (isHost && Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Puzzle is completed
         {
             UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
         }
@@ -135,7 +142,7 @@ public class ClientNetworkManager : MonoBehaviour
         if (isPlaying)
         {
             //apply rotation
-            if(theCube != null) theCube.eulerAngles = new Vector3(0, cubeRot, 0);
+            if (theCube != null) theCube.eulerAngles = new Vector3(0, cubeRot, 0);
             //if playing --> send cube info
             timer += Time.deltaTime;
             if (timer >= sendInterval)
@@ -145,6 +152,16 @@ public class ClientNetworkManager : MonoBehaviour
                 timer = 0f;
             }
         }
+
+        ////smoothly apply transform (done here instead of OnWorldUpdate to avoid jitter)
+        //if (spawnedPlayers.TryGetValue(userId, out var player))
+        //{
+
+        //    Vector3.MoveTowards(player.transform.position, targetPos, Time.deltaTime);
+        //    Vector3.RotateTowards(player.transform.rotation.eulerAngles, targetRot.eulerAngles, Time.deltaTime, 0.0f);
+
+
+        //}
     }
 
     public void ManagePing()
@@ -160,7 +177,7 @@ public class ClientNetworkManager : MonoBehaviour
         }
     }
 
-    public void OnWorldUpdate(BinaryReader reader)
+    public void OnWorldUpdate(BinaryReader reader) //received from connectionmanager FixedUpdate
     {
         int count = reader.ReadInt32();
         for (int i = 0; i < count; i++)
@@ -180,19 +197,34 @@ public class ClientNetworkManager : MonoBehaviour
             float rotY = reader.ReadSingle();
 
 
-            float yVel = reader.ReadSingle();
+            //float yVel = reader.ReadSingle();
 
 
             if (spawnedPlayers.TryGetValue(id, out var player))
             {
+                //no need to get the rb here, since the server already calculated positions with rb.MovePosition and stored them in playerinfo
+                player.transform.position = pos;
+                if (id != userId) player.transform.rotation = Quaternion.Euler(0, rotY, 0);
+
+                //targetPos = pos;
+                //targetRot = Quaternion.Euler(0, rotY, 0);
+                //userId = id;
+
+                //Rigidbody rb = player.GetComponent<Rigidbody>();
                 //check if id matches this users'
-                if (id == userId) player.transform.position = pos;
-                else
-                {
-                    player.transform.position = pos;
-                    player.transform.eulerAngles = new Vector3(0, rotY, 0);
-                    //player.yVelocity = yVel;
-                }
+                //if (id == userId) 
+                //{
+
+                //    player.transform.position = pos;
+                //}
+                //else
+                //{
+                //    //player.transform.position = pos;
+                //    rb.MovePosition(pos);
+                //    //player.transform.eulerAngles = new Vector3(0, rotY, 0);
+                //    rb.MoveRotation(Quaternion.Euler(new Vector3(0, rotY, 0)));
+                //    //player.yVelocity = yVel;
+                //}
             }
         }
 
@@ -340,11 +372,11 @@ public class ClientNetworkManager : MonoBehaviour
             Vector3 pos = new Vector3(x, y, z);
             float rotY = reader.ReadSingle();
             Vector3 rot = new Vector3(0, rotY, 0);
-            float yVel = reader.ReadSingle();
+            //float yVel = reader.ReadSingle();
             byte colorIndex = reader.ReadByte();
 
 
-            PlayerInfo player = new PlayerInfo(id, name, pos, rot, yVel, colorIndex);
+            PlayerInfo player = new PlayerInfo(id, name, pos, rot, /*yVel, */colorIndex);
             playersToSpawn.Add(player);
         }
     }
@@ -390,6 +422,9 @@ public class ClientNetworkManager : MonoBehaviour
             var renderer = instancePlayer.GetComponentInChildren<Renderer>();
             Color color = playerColors[player.colorIndex];
             if(renderer != null) renderer.material.SetColor("_Color", color);
+            Rigidbody rb = instancePlayer.GetComponent<Rigidbody>();
+            if (rb)
+                rb.isKinematic = true; //otherwise you can't use rb.MovePosition or rb.MoveRotation
 
             //check if the user is this client
             if (player.id != userId)
