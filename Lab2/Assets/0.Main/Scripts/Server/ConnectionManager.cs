@@ -1,8 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 using UnityEngine.XR;
 using static MainSerializer;
 
@@ -10,12 +13,16 @@ public class ConnectionManager : MonoBehaviour
 {
     [SerializeField] GameObject playerPrefab;
 
+    
+
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
 
     public float jumpStr = 1000f;
     public Connection ctpc;
     public Connection cudp;
+
+    public System.Action OnServerPlayersSpawned;
 
     private readonly List<Color> playerColors = new List<Color>
     {
@@ -25,6 +32,16 @@ public class ConnectionManager : MonoBehaviour
         Color.yellow,
         Color.magenta,
         Color.cyan
+    };
+
+    Dictionary<Color, Color> playerTileColorPairs = new Dictionary<Color, Color>
+    {
+        {Color.red, new Color(1f, 0.6f, 0.6f, 1f) },
+        {Color.blue, new Color(0.4f, 1f, 1f, 1f)},
+        {Color.green, new Color(0.6f, 1f, 0.5f, 1f) },
+        {Color.yellow, new Color(1f, 0.9f, 0.4f, 1f) },
+        {Color.magenta, new Color(1f, 0.5f, 0.9f, 1.0f)},
+        {Color.cyan, new Color(0.6f, 0.9f, 0.8f, 1f) }
     };
 
     //serializer
@@ -42,15 +59,8 @@ public class ConnectionManager : MonoBehaviour
     public bool isPlaying = false;
     public Dictionary<int, PlayerInfo> playerInfoDic = new Dictionary<int, PlayerInfo>();
     public float speed = 5;
-    float velocity = 0;
     public float gravityScale = 1;
     public float maxJumpHeight = 3;
-
-    bool isPlayerGrounded = true;
-
-    float maxRayCastDist = 0.15f;
-
-
 
     Collider floorCollider;
 
@@ -63,6 +73,16 @@ public class ConnectionManager : MonoBehaviour
     private float speedOpen = 5.0f;
     private float totalCloseTime = 60.0f;
     private float timeRemaining = 60.0f;
+
+    private void OnEnable()
+    {
+        PipeControl.OnBoardCreated += ApplyTileColors;
+    }
+
+    private void OnDisable()
+    {
+        PipeControl.OnBoardCreated -= ApplyTileColors;
+    }
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -192,6 +212,7 @@ public class ConnectionManager : MonoBehaviour
         DontDestroyOnLoad(Camera.main);
 
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
+        
 
         isPlaying = true;
     }
@@ -321,5 +342,51 @@ public class ConnectionManager : MonoBehaviour
        doorType = 1;
        doorOpening = 0.0f;
        timeRemaining = 60.0f;
+    }
+
+    public void ApplyTileColors(Pipe[,] pipeMap)
+    {
+        List<Color> activePlayerColors = new List<Color>();
+        foreach(Pipe p in pipeMap)
+        {
+            Color[] tileColors;
+            if (spawnedPlayers.Count < 2)
+            {
+                tileColors = new Color[2]
+                {
+                   playerTileColorPairs.Values.ToArray()[0],
+                   playerTileColorPairs.Values.ToArray()[1]
+                };
+            }
+            else
+            {
+                foreach (PlayerInfo pInfo in playerInfoDic.Values.ToArray())
+                { 
+                    activePlayerColors.Add(pInfo.color);
+                }
+
+                tileColors = playerTileColorPairs.Values.ToArray();
+                
+            }
+
+
+
+            if (tileColors.Length != 0)
+            {
+                int r = UnityEngine.Random.Range(0, tileColors.Length);
+                if (playerTileColorPairs.ContainsKey(tileColors[r]))
+                {
+                    p.tileColor = playerTileColorPairs[tileColors[r]];
+                }
+                else
+                {
+                    p.tileColor = tileColors[r];
+                }
+                
+            }
+        }
+
+        
+        
     }
 }

@@ -8,10 +8,15 @@ public class PlayerInput : MonoBehaviour
     //timer
     private float interval = 1f / 30f;
     private float timer = 0f;
-    bool sendJump = false, sendGrounded = false;
+    bool rotatedTile = false;
 
     //public Collider collider;
     public Rigidbody rb;
+
+    private void OnEnable()
+    {
+
+    }
 
     private void Start()
     {
@@ -42,6 +47,11 @@ public class PlayerInput : MonoBehaviour
         //Debug.DrawRay(pos, Vector3.down*0.5f, Color.red);
         
 
+    }
+
+    void OnTileRotated()
+    {
+        
     }
 
     void SendPlayerInput(bool sendJump)

@@ -1,18 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+
 
 //using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
-using static UnityEngine.GraphicsBuffer;
+
 
 
 public class Player : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-
+    public System.Action<Color> OnColorSet;
     private readonly List<Color> playerColors = new List<Color>
     {
         Color.red,
@@ -23,19 +25,19 @@ public class Player : MonoBehaviour
         Color.cyan
     };
 
-    public Color tColor;
+    
+    
+
+    public Color tColor, pColor;
     bool nearBoard = false;
     TubeTile tileScript;
-
-
-
-    Color tileRed = Color.red;
-    Color tileBlue = Color.blue;
+    PipeControl boardScript;
 
     Material mat;
 
     void Start()
     {
+        boardScript = GameObject.FindAnyObjectByType<PipeControl>();
         //find the client network manager game object
         ClientNetworkManager.Instance.RegisterPlayerScript(this);
 
@@ -43,7 +45,13 @@ public class Player : MonoBehaviour
 
     public void SetPlayerColor(byte index)
     {
-        tColor = playerColors[index];
+
+        pColor = playerColors[index];
+        
+        if (boardScript) 
+            boardScript.activePlayerColors.Add(pColor);
+
+        
     }
 
     // Update is called once per frame
@@ -63,7 +71,7 @@ public class Player : MonoBehaviour
                 {
                     tileScript = hit.collider.gameObject.GetComponent<TubeTile>();
 
-                    if(mat.GetColor("_Color") == tileScript.GetTileColor())
+                    if(pColor == tileScript.GetPlayerColor())
                     {
                         if (Pointer.current.press.wasPressedThisFrame)
                         {
@@ -95,7 +103,7 @@ public class Player : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Board"))
+        if (other.gameObject.GetComponent<PipeControl>())
         {
             nearBoard = true;
             Debug.Log("Near board");
@@ -104,13 +112,11 @@ public class Player : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.gameObject.CompareTag("Board"))
+        if (other.gameObject.GetComponent<PipeControl>())
         {
             nearBoard = false;
             
         }
     }
 
-
-   
 }

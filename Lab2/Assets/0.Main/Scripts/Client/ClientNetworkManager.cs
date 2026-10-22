@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using Unity.VectorGraphics;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static MainSerializer;
@@ -32,10 +33,16 @@ public class ClientNetworkManager : MonoBehaviour
 
     //Vector3 targetPos = Vector3.zero;
     //Quaternion targetRot = Quaternion.identity;
+    byte playerColorIndex;
 
 
     //user list 
     public List<string> usersList = new List<string>();
+
+    public System.Action<byte> OnPlayerRegistered;
+    public System.Action OnAllPlayersSpawned;
+
+    
 
     //list of colors
     private readonly List<Color> playerColors = new List<Color>
@@ -88,6 +95,18 @@ public class ClientNetworkManager : MonoBehaviour
 
     //on play --> stop full ui 
     bool isPlaying = false;
+
+    private void OnEnable()
+    {
+        OnPlayerRegistered += SetClientPlayerColor;
+        OnAllPlayersSpawned += DeactivateTiles;
+    }
+
+    private void OnDisable()
+    {
+        OnPlayerRegistered -= SetClientPlayerColor;
+        OnAllPlayersSpawned -= DeactivateTiles;
+    }
 
     private void Awake()
     {
@@ -242,6 +261,7 @@ public class ClientNetworkManager : MonoBehaviour
     public void RegisterPlayerScript(Player comp)
     {
         playerComponent = comp;
+        OnPlayerRegistered?.Invoke(playerColorIndex);
     }
 
     void CanvasGui()
@@ -347,6 +367,7 @@ public class ClientNetworkManager : MonoBehaviour
         HandleToSpawnList(reader);
 
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnMultiplayerPlayers;
+        
 
         //make sure all players are set to playing (even if not host)
         isPlaying = true;
@@ -441,13 +462,37 @@ public class ClientNetworkManager : MonoBehaviour
             else
             {
                 //assign color to player script
-                if(playerComponent != null) playerComponent.SetPlayerColor(player.colorIndex);
+
+                playerColorIndex = player.colorIndex; //caching it to use in an action
+                //OnPlayerRegistered += SetClientPlayerColor;
+                
             }
 
             //add to dictionary
             spawnedPlayers[player.id] = instancePlayer;
         }
 
+        OnAllPlayersSpawned?.Invoke();
+        
+    }
+
+    void SetClientPlayerColor(byte index)
+    {
+        
+         if (playerComponent != null)
+             playerComponent.SetPlayerColor(index);
+
+        //OnPlayerRegistered -= SetClientPlayerColor;
+    }
+
+    void DeactivateTiles()
+    {
+        GameObject[] tiles = GameObject.FindGameObjectsWithTag("TubeTile");
+        foreach(GameObject t in tiles)
+        {
+            if (t.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
+                tileScript.enabled = false;
+        }
     }
 
 }
