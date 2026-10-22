@@ -7,11 +7,13 @@ using System.Linq;
 
 public class TubeTile : MonoBehaviour
 {
-    public System.Action Rotated;
+    public static System.Action<int, int, int> Rotated;
     bool rotating = false;
     public float turnDuration = 0.5f;
     float elapsedTime = 0;
     int rotIndex = 0;
+
+    public int xIndex = 0, yIndex = 0; // client & server fill them in
 
     Dictionary<Color, Color> playerTileColorPairs = new Dictionary<Color, Color>
     {
@@ -31,10 +33,10 @@ public class TubeTile : MonoBehaviour
 
     Vector3[] rotations =
     {
+        new Vector3 (0,0,0),
         new Vector3 (0,0,90),
         new Vector3 (0,0,180),
-        new Vector3 (0,0,270),
-        new Vector3 (0,0,360)
+        new Vector3 (0,0,270)
     };
 
     private void OnEnable()
@@ -98,12 +100,13 @@ public class TubeTile : MonoBehaviour
             elapsedTime += Time.deltaTime;
             rotating = true;
             transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRot, Mathf.Min(elapsedTime, 1.0f));
-            Rotated?.Invoke();
+            
             yield return null;
         }
         rotating = false;
         rotIndex++;
         elapsedTime = 0;
+        Rotated?.Invoke(xIndex, yIndex, rotIndex);
     }
 
     public Color GetPlayerColor()
@@ -114,6 +117,8 @@ public class TubeTile : MonoBehaviour
         }
         return Color.red;
     }
+
+    public int GetRotIndex() { return rotIndex; }
 
 
 }

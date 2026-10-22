@@ -76,12 +76,14 @@ public class ConnectionManager : MonoBehaviour
 
     private void OnEnable()
     {
-        PipeControl.OnBoardCreated += ApplyTileColors;
+        //PipeControl.OnBoardCreated += ApplyTileColors;
+        TubeTile.Rotated += SendBoardChange;
     }
 
     private void OnDisable()
     {
-        PipeControl.OnBoardCreated -= ApplyTileColors;
+        //PipeControl.OnBoardCreated -= ApplyTileColors;
+        TubeTile.Rotated -= SendBoardChange;
     }
 
 
@@ -344,49 +346,83 @@ public class ConnectionManager : MonoBehaviour
        timeRemaining = 60.0f;
     }
 
-    public void ApplyTileColors(Pipe[,] pipeMap)
+    public void CreateBoard(Pipe[,] pipeMap, GameObject parent)
     {
-        List<Color> activePlayerColors = new List<Color>();
-        foreach(Pipe p in pipeMap)
+
+        Color[] tileColors = GetActiveColors();
+
+        for (int i = 0; i < pipeMap.GetLength(0); ++i)
         {
-            Color[] tileColors;
-            if (spawnedPlayers.Count < 2)
+            for (int j = 0; j < pipeMap.GetLength(1); ++j)
             {
-                tileColors = new Color[2]
+                Pipe p = pipeMap[i, j];
+                GameObject tileObj = Instantiate(p.prefab, parent.gameObject.transform);
+                tileObj.transform.localPosition = p.boardPos;
+                tileObj.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
+
+                if (tileColors.Length != 0)
                 {
-                   playerTileColorPairs.Values.ToArray()[0],
-                   playerTileColorPairs.Values.ToArray()[1]
-                };
-            }
-            else
-            {
-                foreach (PlayerInfo pInfo in playerInfoDic.Values.ToArray())
+                    int r = UnityEngine.Random.Range(0, tileColors.Length);
+                    if (playerTileColorPairs.ContainsKey(tileColors[r]))
+                    {
+                        p.tileColor = playerTileColorPairs[tileColors[r]];
+                    }
+                    else
+                    {
+                        p.tileColor = tileColors[r];
+                    }
+
+                }
+                else p.tileColor = Color.white; //last resort ig;
+
+                if (tileObj.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
                 { 
-                    activePlayerColors.Add(pInfo.color);
+                    tileScript.xIndex = i;
+                    tileScript.yIndex = j;
                 }
 
-                tileColors = playerTileColorPairs.Values.ToArray();
-                
-            }
-
-
-
-            if (tileColors.Length != 0)
-            {
-                int r = UnityEngine.Random.Range(0, tileColors.Length);
-                if (playerTileColorPairs.ContainsKey(tileColors[r]))
-                {
-                    p.tileColor = playerTileColorPairs[tileColors[r]];
-                }
-                else
-                {
-                    p.tileColor = tileColors[r];
-                }
-                
             }
         }
 
         
+        byte[] boardPacket = serializer.SerializeBoardState(pipeMap);
+
+        foreach(var user in ctpc.usersConnected)
+        {
+            ctpc.SendPacketTCP(boardPacket, user.Key);
+        }
         
     }
+
+    public Color[] GetActiveColors()
+    {
+        List<Color> activePlayerColors = new List<Color>();
+        Color[] tileColors;
+        if (spawnedPlayers.Count < 2)
+        {
+            tileColors = new Color[2]
+            {
+                playerTileColorPairs.Values.ToArray()[0],
+                playerTileColorPairs.Values.ToArray()[1]
+            };
+        }
+        else
+        {
+            foreach (PlayerInfo pInfo in playerInfoDic.Values.ToArray())
+            {
+                activePlayerColors.Add(pInfo.color);
+            }
+
+            tileColors = playerTileColorPairs.Values.ToArray();
+
+        }
+
+        return tileColors;
+    }
+
+    void SendBoardChange(int tileX, int tileY, int rotIndex)
+    {
+        serializer.SerializeBoardChange(tileX, tileY, rotIndex);
+    }
+
 }

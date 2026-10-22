@@ -34,7 +34,8 @@ public class ClientNetworkManager : MonoBehaviour
     //Vector3 targetPos = Vector3.zero;
     //Quaternion targetRot = Quaternion.identity;
     byte playerColorIndex;
-
+    //Pipe[,] pipeMap;
+    GameObject[,] tileObj;
 
     //user list 
     public List<string> usersList = new List<string>();
@@ -100,12 +101,15 @@ public class ClientNetworkManager : MonoBehaviour
     {
         OnPlayerRegistered += SetClientPlayerColor;
         OnAllPlayersSpawned += DeactivateTiles;
+       
+        
     }
 
     private void OnDisable()
     {
         OnPlayerRegistered -= SetClientPlayerColor;
         OnAllPlayersSpawned -= DeactivateTiles;
+       
     }
 
     private void Awake()
@@ -209,9 +213,6 @@ public class ClientNetworkManager : MonoBehaviour
             float y = reader.ReadSingle();
             float z = reader.ReadSingle();
             Vector3 pos = new Vector3(x, y, z);
-
-           
-
             //get rotation value
             float rotY = reader.ReadSingle();
 
@@ -225,31 +226,96 @@ public class ClientNetworkManager : MonoBehaviour
                 player.transform.position = pos;
                 if (id != userId) player.transform.rotation = Quaternion.Euler(0, rotY, 0);
 
-                //targetPos = pos;
-                //targetRot = Quaternion.Euler(0, rotY, 0);
-                //userId = id;
-
-                //Rigidbody rb = player.GetComponent<Rigidbody>();
-                //check if id matches this users'
-                //if (id == userId) 
-                //{
-
-                //    player.transform.position = pos;
-                //}
-                //else
-                //{
-                //    //player.transform.position = pos;
-                //    rb.MovePosition(pos);
-                //    //player.transform.eulerAngles = new Vector3(0, rotY, 0);
-                //    rb.MoveRotation(Quaternion.Euler(new Vector3(0, rotY, 0)));
-                //    //player.yVelocity = yVel;
-                //}
             }
         }
 
         if (reader.BaseStream.Position < reader.BaseStream.Length)
         {
             currentDoorOpening = reader.ReadSingle();
+        }
+    }
+
+    public void OnBoardCreated(BinaryReader reader)
+    {
+        PipeControl boardScript = FindAnyObjectByType<PipeControl>();
+
+        int rows = reader.ReadInt32();
+        int cols = reader.ReadInt32();
+
+        Pipe[,] pipeMap = new Pipe[rows, cols];
+        tileObj = new GameObject[rows, cols];
+
+        for(int i = 0; i < rows; ++i)
+        {
+            for(int j = 0; j < cols; ++j)
+            {
+                Pipe p = new Pipe();
+                
+
+                p.type = reader.ReadInt32();
+                if(p.type == 0)
+                {
+                    p.exit1 = 1;
+                    p.exit2 = 2;
+                    p.prefab = boardScript.cornerTile;
+                }
+                else if(p.type == 1)
+                {
+                    p.exit1 = 1;
+                    p.exit2 = 3;
+                    p.prefab = boardScript.straightTile;
+                }
+
+                float boardPosX = reader.ReadSingle();
+                float boardPosY = reader.ReadSingle();
+                p.rotIndex = reader.ReadInt32();
+                
+                float r = reader.ReadSingle();
+                float g = reader.ReadSingle();
+                float b = reader.ReadSingle();
+                float a = reader.ReadSingle();
+                p.tileColor = new Color(r, g, b, a);
+
+                p.boardPos = new Vector3(boardPosX, boardPosY, 0);
+               
+
+                GameObject tile = Instantiate(p.prefab, boardScript.gameObject.transform);
+                tile.transform.localPosition = p.boardPos;
+                tile.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
+                tile.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
+
+                if (tile.TryGetComponent<TubeTile>(out TubeTile tileScript))
+                {
+                    tileScript.xIndex = i;
+                    tileScript.yIndex = j;
+                }
+
+                tileObj[i, j] = tile;
+            }
+        }
+    }
+
+    public void OnBoardUpdate(BinaryReader reader)
+    {
+        int xIndex = reader.ReadInt32();
+        int yIndex = reader.ReadInt32();
+        int rotIndex = reader.ReadInt32();
+
+        bool found = false;
+
+        for(int i = 0; i < tileObj.GetLength(0); ++i) 
+        {
+            for(int j = 0; j < tileObj.GetLength(1);  ++j)
+            {
+                if(i == xIndex && j == yIndex) found = true;
+                break;
+            }
+        }
+
+        if (found)
+        {
+            tileObj[xIndex, yIndex].transform.localRotation = Quaternion.Euler(new Vector3(0,0, rotIndex*90f));
+            //ANIMATE-
         }
     }
 
@@ -485,6 +551,7 @@ public class ClientNetworkManager : MonoBehaviour
         //OnPlayerRegistered -= SetClientPlayerColor;
     }
 
+   
     void DeactivateTiles()
     {
         GameObject[] tiles = GameObject.FindGameObjectsWithTag("TubeTile");

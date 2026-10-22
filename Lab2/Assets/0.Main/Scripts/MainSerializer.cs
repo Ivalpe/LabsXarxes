@@ -17,7 +17,9 @@ public class MainSerializer : MonoBehaviour
         Text = 3,
         Input = 4,
         World = 5,
-        CubeRot = 6
+        CubeRot = 6,
+        BoardState = 7,
+        BoardChange = 8
     }
 
     //types of commands
@@ -181,6 +183,59 @@ public class MainSerializer : MonoBehaviour
             return stream.ToArray();
         }
 
+        public byte[] SerializeBoardState(Pipe[,] pipeMap)
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            writer.Write((byte)MsgType.BoardState);
+
+            writer.Write(pipeMap.GetLength(0));
+            writer.Write(pipeMap.GetLength(1));
+
+            for (int i = 0; i < pipeMap.GetLength(0); ++i)
+            {
+                for(int j = 0; j<pipeMap.GetLength(1); ++j)
+                {
+                    //corner or straight
+                    writer.Write(pipeMap[i, j].type); 
+                    //not storing exit bc it can be reconstructed with type
+                    //not storing prefab nor tileObj cuz they're GameObjects and not serializable
+
+                    //position
+                    writer.Write(pipeMap[i, j].boardPos.x);
+                    writer.Write(pipeMap[i, j].boardPos.y);
+                    //rotation
+                    writer.Write(pipeMap[i, j].rotIndex);
+                    //tileColor
+                    writer.Write(pipeMap[i, j].tileColor.r);
+                    writer.Write(pipeMap[i, j].tileColor.g);
+                    writer.Write(pipeMap[i, j].tileColor.b);
+                    writer.Write(pipeMap[i, j].tileColor.a);
+                    
+                }
+            }
+
+            byte[] data = stream.ToArray();
+
+            return data;
+        }
+
+        public byte[] SerializeBoardChange(int xIndex, int yIndex, int rotIndex)
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            writer.Write((byte)MsgType.BoardChange);
+            writer.Write(xIndex);
+            writer.Write(yIndex);
+            writer.Write(rotIndex);
+            
+            byte[] data = stream.ToArray();
+
+            return data;
+        }
+
         //DESERIALIZER 
         public abstract void Deserialize(byte[] data, Socket TCPfrom = null, EndPoint UDPfrom = null);
     }
@@ -213,6 +268,12 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case MsgType.World:
                     networkManager.OnWorldUpdate(reader);
+                    break;
+                case MsgType.BoardState:
+                    networkManager.OnBoardCreated(reader);
+                    break;
+                case MsgType.BoardChange:
+                    networkManager.OnBoardUpdate(reader);
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");

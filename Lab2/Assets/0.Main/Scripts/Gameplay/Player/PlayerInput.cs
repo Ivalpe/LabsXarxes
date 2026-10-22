@@ -49,10 +49,7 @@ public class PlayerInput : MonoBehaviour
 
     }
 
-    void OnTileRotated()
-    {
-        
-    }
+
 
     void SendPlayerInput(bool sendJump)
     {
@@ -64,6 +61,7 @@ public class PlayerInput : MonoBehaviour
         float yawRotation;
         if (cameraTransform != null) yawRotation = cameraTransform.eulerAngles.y;
         else yawRotation = transform.eulerAngles.y; //if no camera -> get transform to avoid errors
+
 
 
         //send by UDP
