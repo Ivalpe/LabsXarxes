@@ -16,13 +16,11 @@ public class Pipe
     public Color tileColor = Color.white;
 
     public int rotIndex = 0;
-
-    
 }
 
 public class PipeControl : MonoBehaviour
 {
-    
+
     public GameObject cornerTile, straightTile;
     // PIPES PUZZLE https://hexapipes.vercel.app/custom
 
@@ -69,28 +67,57 @@ public class PipeControl : MonoBehaviour
         //Initialize the pipes
         pipeMap = new Pipe[10, 5];
 
+        int[] sol = { 2, 2, 0, 1, 0, 
+                      2, 0, 0, 2, 2,
+                      2, 1, 2, 2 ,2,
+                      2, 0, 0, 2, 2,
+                      2, 2, 0, 1, 0,
+                      2, 2, 2, 2, 1,
+                      2, 2, 2, 2, 1,
+                      2, 2, 2, 2, 1,
+                      2, 2, 0, 0, 1,
+                      0, 1, 0, 0, 0};
+        int indexSol = 0;
+
         for (int i = 0; i < pipeMap.GetLength(0); i++)
         {
             for (int j = 0; j < pipeMap.GetLength(1); j++)
             {
                 Pipe p = new Pipe();
-
                 int r = Random.Range(0, 2);
 
-                if (r == 0)
+                if (sol[indexSol] == 0)
                 {
                     p.exit1 = 1;
                     p.exit2 = 2;
                     p.prefab = cornerTile;
+                    p.type = 0;
                 }
-                else
+                else if (sol[indexSol] == 1)
                 {
                     p.exit1 = 1;
                     p.exit2 = 3;
                     p.prefab = straightTile;
+                    p.type = 1;
+                }
+                else
+                {
+                    if (r == 0)
+                    {
+                        p.exit1 = 1;
+                        p.exit2 = 2;
+                        p.prefab = cornerTile;
+                    }
+                    else
+                    {
+                        p.exit1 = 1;
+                        p.exit2 = 3;
+                        p.prefab = straightTile;
+                    }
+                    p.type = r; //type
                 }
 
-                p.type = r; //type
+                indexSol++;
 
                 r = Random.Range(0, 4); //random rotation
 
@@ -118,7 +145,7 @@ public class PipeControl : MonoBehaviour
 
         PrintBoardData();
 
-        
+
     }
 
     void SetUpDetectArea()
@@ -145,10 +172,10 @@ public class PipeControl : MonoBehaviour
 
     private void Update()
     {
-        if (connectionManager == null) 
+        if (connectionManager == null)
             connectionManager = GameObject.FindAnyObjectByType<ConnectionManager>();
 
-        if(connectionManager != null && !sentToServer)
+        if (connectionManager != null && !sentToServer)
         {
             connectionManager.CreateBoard(pipeMap, this.gameObject);
             sentToServer = true;
