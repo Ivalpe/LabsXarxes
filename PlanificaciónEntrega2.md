@@ -1,3 +1,4 @@
+
 Idea: Puzzles desde tuberías --> Girarlas dependiendo de los colores. 
   - Cada player es un color. 
   - Si un player entra más tarde, esperar a que termine el puzzle.
@@ -26,3 +27,16 @@ Aufgaben
 (Muy extra)
 - Ponerlo bonito
 - Música
+
+
+
+NOTAS PARA PRESENTACION:
+TCP
+- chat
+- userlist
+- tablero pipes entero (cuando se carga la escena)
+UDP
+- command to change to game scene
+- player movement (walk, jump)
+- rotacion individual de una tile (por iteraccion de usuario)
+- puerta que mueve el servidor
