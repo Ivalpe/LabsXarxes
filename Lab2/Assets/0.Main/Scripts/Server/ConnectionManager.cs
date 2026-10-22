@@ -372,6 +372,8 @@ public class ConnectionManager : MonoBehaviour
                         p.tileColor = tileColors[r];
                     }
 
+                    tileObj.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
+
                 }
                 else p.tileColor = Color.white; //last resort ig;
 
