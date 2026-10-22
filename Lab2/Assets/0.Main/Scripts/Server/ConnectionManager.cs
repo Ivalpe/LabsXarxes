@@ -349,7 +349,7 @@ public class ConnectionManager : MonoBehaviour
     public void CreateBoard(Pipe[,] pipeMap, GameObject parent)
     {
 
-        Color[] tileColors = GetActiveColors();
+        Color[] playerColors = GetActiveColors();
 
         for (int i = 0; i < pipeMap.GetLength(0); ++i)
         {
@@ -360,16 +360,16 @@ public class ConnectionManager : MonoBehaviour
                 tileObj.transform.localPosition = p.boardPos;
                 tileObj.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
 
-                if (tileColors.Length != 0)
+                if (playerColors.Length != 0)
                 {
-                    int r = UnityEngine.Random.Range(0, tileColors.Length);
-                    if (playerTileColorPairs.ContainsKey(tileColors[r]))
+                    int r = UnityEngine.Random.Range(0, playerColors.Length);
+                    if (playerTileColorPairs.ContainsKey(playerColors[r]))
                     {
-                        p.tileColor = playerTileColorPairs[tileColors[r]];
+                        p.tileColor = playerTileColorPairs[playerColors[r]];
                     }
                     else
                     {
-                        p.tileColor = tileColors[r];
+                        p.tileColor = playerColors[r];
                     }
 
                     tileObj.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
@@ -399,13 +399,13 @@ public class ConnectionManager : MonoBehaviour
     public Color[] GetActiveColors()
     {
         List<Color> activePlayerColors = new List<Color>();
-        Color[] tileColors;
+        Color[] playerColors;
         if (spawnedPlayers.Count < 2)
         {
-            tileColors = new Color[2]
+            playerColors = new Color[2]
             {
-                playerTileColorPairs.Values.ToArray()[0],
-                playerTileColorPairs.Values.ToArray()[1]
+                playerTileColorPairs.Keys.ToArray()[0],
+                playerTileColorPairs.Keys.ToArray()[1]
             };
         }
         else
@@ -415,11 +415,11 @@ public class ConnectionManager : MonoBehaviour
                 activePlayerColors.Add(pInfo.color);
             }
 
-            tileColors = playerTileColorPairs.Values.ToArray();
+            playerColors = activePlayerColors.ToArray();
 
         }
 
-        return tileColors;
+        return playerColors;
     }
 
     void SendBoardChange(int tileX, int tileY, int rotIndex)

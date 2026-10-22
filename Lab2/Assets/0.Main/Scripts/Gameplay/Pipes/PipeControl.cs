@@ -122,7 +122,7 @@ public class PipeControl : MonoBehaviour
                 r = Random.Range(0, 4); //random rotation
 
                 p.rotIndex = r;
-
+                
                 p.exit1 += r;
                 p.exit2 += r;
 
@@ -159,11 +159,11 @@ public class PipeControl : MonoBehaviour
 
     void PrintBoardData()
     {
-        for (int i = 0; i < pipeMap.GetLength(0); i++)
+        for (int j = pipeMap.GetLength(1) - 1; j >= 0; --j)
         {
-            for (int j = 0; j < pipeMap.GetLength(1); j++)
+            for (int i = 0; i < pipeMap.GetLength(0); i++)
             {
-                tablero += pipeMap[i, j].type.ToString();
+                tablero += pipeMap[i, j].type.ToString() + " ";
             }
             tablero += "\n";
         }

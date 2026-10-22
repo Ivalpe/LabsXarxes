@@ -100,7 +100,7 @@ public class ClientNetworkManager : MonoBehaviour
     private void OnEnable()
     {
         OnPlayerRegistered += SetClientPlayerColor;
-        OnAllPlayersSpawned += DeactivateTiles;
+        //OnAllPlayersSpawned += DeactivateTiles;
        
         
     }
@@ -108,7 +108,7 @@ public class ClientNetworkManager : MonoBehaviour
     private void OnDisable()
     {
         OnPlayerRegistered -= SetClientPlayerColor;
-        OnAllPlayersSpawned -= DeactivateTiles;
+        //OnAllPlayersSpawned -= DeactivateTiles;
        
     }
 
@@ -552,14 +552,14 @@ public class ClientNetworkManager : MonoBehaviour
     }
 
    
-    void DeactivateTiles()
-    {
-        GameObject[] tiles = GameObject.FindGameObjectsWithTag("TubeTile");
-        foreach(GameObject t in tiles)
-        {
-            if (t.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
-                tileScript.enabled = false;
-        }
-    }
+    //void DeactivateTiles()
+    //{
+    //    GameObject[] tiles = GameObject.FindGameObjectsWithTag("TubeTile");
+    //    foreach(GameObject t in tiles)
+    //    {
+    //        if (t.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
+    //            tileScript.enabled = false;
+    //    }
+    //}
 
 }
