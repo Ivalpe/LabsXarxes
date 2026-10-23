@@ -6,93 +6,59 @@ using Unity.VisualScripting;
 using System.Linq;
 
 public class TubeTile : MonoBehaviour
-{
-    public static System.Action<int, int, int> Rotated;
+{ 
     bool rotating = false;
     public float turnDuration = 0.5f;
     float elapsedTime = 0;
-    int rotIndex = 0;
+    float emissionTimer = 0f;
 
     public int xIndex = 0, yIndex = 0; // client & server fill them in
 
-    Dictionary<Color, Color> playerTileColorPairs = new Dictionary<Color, Color>
-    {
-        {Color.red, new Color(1f, 0.6f, 0.6f, 1f) },
-        {Color.blue, new Color(0.4f, 1f, 1f, 1f)},
-        {Color.green, new Color(0.6f, 1f, 0.5f, 1f) },
-        {Color.yellow, new Color(1f, 0.9f, 0.4f, 1f) },
-        {Color.magenta, new Color(1f, 0.5f, 0.9f, 1.0f)},
-        {Color.cyan, new Color(0.6f, 0.9f, 0.8f, 1f) }
-    };
-
-    Color tileColor;
-
-    //baseHDRcombo colorPair;
-    Material mat;
-
-
-    Vector3[] rotations =
-    {
-        new Vector3 (0,0,0),
-        new Vector3 (0,0,90),
-        new Vector3 (0,0,180),
-        new Vector3 (0,0,270)
-    };
-
-    private void OnEnable()
-    {
-        
-    }
-
-    private void OnDisable()
-    {
-        
-    }
+    public Color tileColor;
+    public Material mat;
     void Start()
     {
 
         mat = GetComponent<Renderer>().material;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
         
+        mat.SetColor("_EmissionColor", Color.black);
+        
+        //tileColor = mat.GetColor("_Color"); --> gets initiated with prefab color
     }
-
-    
-
     public void EnableEmission()
     {
-        
         mat.EnableKeyword("_EMISSION");
         mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-        mat.SetColor("_EmissionColor", tileColor * 1f);
+        mat.SetColor("_EmissionColor", tileColor * 0.5f);
+
+        
     }
 
-    public void DisableEmission()
+    public void  DisableEmission()
     {
-        //mat.DisableKeyword("_EMISSION");
-        //mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
 
+        mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
 
+        
         mat.SetColor("_EmissionColor", Color.black);
+        
     }
 
-    public void StartRotation()
+    public void StartRotation(Pipe p)
     {
         if (!rotating)
         {
-            if (rotIndex >= rotations.Length) rotIndex = 0;
+            if (p.rotIndex > 4) p.rotIndex -= 4;
+            if (p.exit1 > 4) p.exit1 -= 4;
+            if (p.exit2 > 4) p.exit2 -= 4;
 
-
-            Quaternion targetRot = Quaternion.Euler(rotations[rotIndex]);
-            StartCoroutine(Rotate(targetRot));
+            Quaternion targetRot = Quaternion.Euler(new Vector3(0,0, p.rotIndex * 90f));
+            StartCoroutine(Rotate(p, targetRot));
         }
         
     }
 
-    IEnumerator Rotate(Quaternion targetRot)
+    IEnumerator Rotate(Pipe p, Quaternion targetRot)
     {
         
         while (elapsedTime <= turnDuration)
@@ -103,22 +69,22 @@ public class TubeTile : MonoBehaviour
             
             yield return null;
         }
+
         rotating = false;
-        rotIndex++;
+        p.rotIndex++;
+        p.exit1++;
+        p.exit2++;
         elapsedTime = 0;
-        Rotated?.Invoke(xIndex, yIndex, rotIndex);
+        
     }
 
     public Color GetPlayerColor()
     {
-        foreach(var colorPair in playerTileColorPairs)
+        foreach (var colorPair in ConnectionManager.playerTileColorPairs)
         {
-            if(mat.GetColor("_Color") == colorPair.Value) return colorPair.Key;
+            if (mat.GetColor("_Color") == colorPair.Value) return colorPair.Key;
         }
         return Color.red;
     }
-
-    public int GetRotIndex() { return rotIndex; }
-
 
 }

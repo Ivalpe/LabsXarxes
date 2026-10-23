@@ -15,6 +15,8 @@ public class Player : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public System.Action<Color> OnColorSet;
+    public static System.Action<Pipe> OnTileRotated;
+    
     private readonly List<Color> playerColors = new List<Color>
     {
         Color.red,
@@ -69,17 +71,23 @@ public class Player : MonoBehaviour
                 
                 if (hit.collider.CompareTag("TubeTile"))
                 {
+                  
                     tileScript = hit.collider.gameObject.GetComponent<TubeTile>();
+                    
 
                     if(pColor == tileScript.GetPlayerColor())
                     {
                         if (Pointer.current.press.wasPressedThisFrame)
                         {
-
-                            if (tileScript) tileScript.StartRotation();
+                            int x = tileScript.xIndex;
+                            int y = tileScript.yIndex;
+                            //if (tileScript) tileScript.StartRotation(boardScript.pipeMap[x, y]);
+                            Pipe p = boardScript.pipeMap[x, y];
+                            OnTileRotated?.Invoke(p);
                         }
                         //Debug.Log("Tapped" + hit.collider.gameObject.name);
-                        if (tileScript) tileScript.EnableEmission();
+                        if (tileScript) 
+                            tileScript.EnableEmission();
 
 
                         //StartCoroutine(RotateTile(hit.collider.gameObject, targetRot));
@@ -89,16 +97,25 @@ public class Player : MonoBehaviour
                 }
                 else
                 {
-                    if(tileScript) tileScript.DisableEmission();
+                    DisableAllTilesEmission();
                 }
 
             }
+           
 
         }
         else
         {
-            if (tileScript) tileScript.DisableEmission();
+            DisableAllTilesEmission();
         }   
+    }
+
+    void DisableAllTilesEmission()
+    {
+        foreach(var p in boardScript.pipeMap)
+        {
+            p.tileGO.GetComponent<TubeTile>().DisableEmission();
+        }
     }
 
     private void OnTriggerEnter(Collider other)

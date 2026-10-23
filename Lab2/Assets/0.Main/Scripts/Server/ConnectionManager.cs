@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -34,7 +35,7 @@ public class ConnectionManager : MonoBehaviour
         Color.cyan
     };
 
-    Dictionary<Color, Color> playerTileColorPairs = new Dictionary<Color, Color>
+    public static Dictionary<Color, Color> playerTileColorPairs = new Dictionary<Color, Color>
     {
         {Color.red, new Color(1f, 0.6f, 0.6f, 1f) },
         {Color.blue, new Color(0.4f, 1f, 1f, 1f)},
@@ -73,19 +74,6 @@ public class ConnectionManager : MonoBehaviour
     private float speedOpen = 5.0f;
     private float totalCloseTime = 60.0f;
     private float timeRemaining = 60.0f;
-
-    private void OnEnable()
-    {
-        //PipeControl.OnBoardCreated += ApplyTileColors;
-        TubeTile.Rotated += SendBoardChange;
-    }
-
-    private void OnDisable()
-    {
-        //PipeControl.OnBoardCreated -= ApplyTileColors;
-        TubeTile.Rotated -= SendBoardChange;
-    }
-
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -356,10 +344,11 @@ public class ConnectionManager : MonoBehaviour
             for (int j = 0; j < pipeMap.GetLength(1); ++j)
             {
                 Pipe p = pipeMap[i, j];
-                GameObject tileObj = Instantiate(p.prefab, parent.gameObject.transform);
-                tileObj.transform.localPosition = p.boardPos;
-                tileObj.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
+                p.tileGO = Instantiate(p.prefab, parent.gameObject.transform);
+                p.tileGO.transform.localPosition = p.boardPos;
+                p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
 
+                //color hasn't been assigned in PipeControl, doing so now:
                 if (playerColors.Length != 0)
                 {
                     int r = UnityEngine.Random.Range(0, playerColors.Length);
@@ -372,20 +361,41 @@ public class ConnectionManager : MonoBehaviour
                         p.tileColor = playerColors[r];
                     }
 
-                    tileObj.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
+
+
+                    p.tileGO.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
+                    //p.tileGO.GetComponent<Renderer>().material.EnableKeyword("_EMISSION");
+                    //p.tileGO.GetComponent<Renderer>().material.SetColor("_Emission", Color.black);
+
 
                 }
                 else p.tileColor = Color.white; //last resort ig;
 
-                if (tileObj.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
+                if (p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
                 { 
                     tileScript.xIndex = i;
                     tileScript.yIndex = j;
+                    tileScript.tileColor = p.tileColor;
+
+                    if (tileScript.mat == null)
+                    { 
+                        if(p.tileGO.TryGetComponent<Renderer>(out Renderer renderer))
+                        {
+                            tileScript.mat = renderer.material;
+                            tileScript.mat.SetColor("_Color", tileScript.tileColor);
+                        }
+                        
+                    }
                 }
 
             }
         }
 
+        //just in case
+        if(parent.TryGetComponent<PipeControl>(out PipeControl boardScript))
+        {
+            boardScript.pipeMap = pipeMap;
+        }
         
         byte[] boardPacket = serializer.SerializeBoardState(pipeMap);
 
@@ -422,9 +432,26 @@ public class ConnectionManager : MonoBehaviour
         return playerColors;
     }
 
-    void SendBoardChange(int tileX, int tileY, int rotIndex)
+    public void UpdateBoard(BinaryReader reader)
     {
-        serializer.SerializeBoardChange(tileX, tileY, rotIndex);
+
+        int tileX = reader.ReadInt32();
+        int tileY = reader.ReadInt32();
+
+        
+        PipeControl boardScript = FindAnyObjectByType<PipeControl>();
+        Pipe[,] pipeMap = boardScript.pipeMap;
+
+        Pipe p = pipeMap[tileX, tileY];
+
+        if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+        {
+            tileScript.StartRotation(p);
+        }
+
+        byte[] tilePacket = serializer.SerializeTile(p);
+        
+        ctpc.TCPSendToAllClients(tilePacket);
     }
 
 }

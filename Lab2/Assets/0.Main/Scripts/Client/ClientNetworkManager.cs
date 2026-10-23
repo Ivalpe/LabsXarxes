@@ -34,8 +34,8 @@ public class ClientNetworkManager : MonoBehaviour
     //Vector3 targetPos = Vector3.zero;
     //Quaternion targetRot = Quaternion.identity;
     byte playerColorIndex;
-    //Pipe[,] pipeMap;
-    GameObject[,] tileObj;
+    Pipe[,] pipeMap;
+    //GameObject[,] tileObj;
 
     //user list 
     public List<string> usersList = new List<string>();
@@ -43,7 +43,7 @@ public class ClientNetworkManager : MonoBehaviour
     public System.Action<byte> OnPlayerRegistered;
     public System.Action OnAllPlayersSpawned;
 
-    
+    //public System.Action<Pipe> OnTileRotated;
 
     //list of colors
     private readonly List<Color> playerColors = new List<Color>
@@ -100,7 +100,7 @@ public class ClientNetworkManager : MonoBehaviour
     private void OnEnable()
     {
         OnPlayerRegistered += SetClientPlayerColor;
-        //OnAllPlayersSpawned += DeactivateTiles;
+        Player.OnTileRotated += SendTileRotation;
        
         
     }
@@ -108,8 +108,8 @@ public class ClientNetworkManager : MonoBehaviour
     private void OnDisable()
     {
         OnPlayerRegistered -= SetClientPlayerColor;
-        //OnAllPlayersSpawned -= DeactivateTiles;
-       
+        Player.OnTileRotated -= SendTileRotation;
+
     }
 
     private void Awake()
@@ -242,8 +242,8 @@ public class ClientNetworkManager : MonoBehaviour
         int rows = reader.ReadInt32();
         int cols = reader.ReadInt32();
 
-        Pipe[,] pipeMap = new Pipe[rows, cols];
-        tileObj = new GameObject[rows, cols];
+        pipeMap = new Pipe[rows, cols];
+        
 
         for(int i = 0; i < rows; ++i)
         {
@@ -279,44 +279,72 @@ public class ClientNetworkManager : MonoBehaviour
                 p.boardPos = new Vector3(boardPosX, boardPosY, 0);
                
 
-                GameObject tile = Instantiate(p.prefab, boardScript.gameObject.transform);
-                tile.transform.localPosition = p.boardPos;
-                tile.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
-                tile.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
+                p.tileGO = Instantiate(p.prefab, boardScript.gameObject.transform);
+                p.tileGO.transform.localPosition = p.boardPos;
+                p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
+                //p.tileGO.GetComponent<Renderer>().material.EnableKeyword("_EMISSION");
+                //p.tileGO.GetComponent<Renderer>().material.SetColor("_Emission", Color.black);
+                p.tileGO.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
 
-                if (tile.TryGetComponent<TubeTile>(out TubeTile tileScript))
+                if (p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
                 {
                     tileScript.xIndex = i;
                     tileScript.yIndex = j;
+                    tileScript.tileColor = p.tileColor;
+
+                    if (tileScript.mat == null)
+                    {
+                        if (p.tileGO.TryGetComponent<Renderer>(out Renderer renderer))
+                        {
+                            
+                            tileScript.mat = renderer.material;
+                            tileScript.mat.SetColor("_Color", tileScript.tileColor);
+                        }
+
+                    }
                 }
 
-                tileObj[i, j] = tile;
+                pipeMap[i, j] = p;
             }
         }
+
+        boardScript.pipeMap = pipeMap; 
+        //has to be reassigned because the GO's info was filled on the server's boardScript, not this one.
     }
 
     public void OnBoardUpdate(BinaryReader reader)
     {
-        int xIndex = reader.ReadInt32();
-        int yIndex = reader.ReadInt32();
-        int rotIndex = reader.ReadInt32();
+        int xIndex = reader.ReadInt32(); 
+        int yIndex = reader.ReadInt32(); 
+        
 
         bool found = false;
 
-        for(int i = 0; i < tileObj.GetLength(0); ++i) 
+
+        for(int i = 0; i < pipeMap.GetLength(0); ++i) 
         {
-            for(int j = 0; j < tileObj.GetLength(1);  ++j)
+            for(int j = 0; j < pipeMap.GetLength(1);  ++j)
             {
-                if(i == xIndex && j == yIndex) found = true;
-                break;
+                if (i == xIndex && j == yIndex)
+                {
+                    found = true;
+                    break;
+                }
+                
             }
         }
 
         if (found)
         {
-            tileObj[xIndex, yIndex].transform.localRotation = Quaternion.Euler(new Vector3(0,0, rotIndex*90f));
-            //ANIMATE-
+            if(pipeMap[xIndex, yIndex].tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+            {
+                tileScript.StartRotation(pipeMap[xIndex, yIndex]);
+            }
         }
+
+        PipeControl boardScript = GameObject.FindAnyObjectByType<PipeControl>();
+        if (boardScript) boardScript.pipeMap = pipeMap;
+        else Debug.Log("BoardScript not found when updating board!");
     }
 
     public void RegisterCube(Transform cube)
@@ -547,19 +575,13 @@ public class ClientNetworkManager : MonoBehaviour
         
          if (playerComponent != null)
              playerComponent.SetPlayerColor(index);
-
-        //OnPlayerRegistered -= SetClientPlayerColor;
     }
 
-   
-    //void DeactivateTiles()
-    //{
-    //    GameObject[] tiles = GameObject.FindGameObjectsWithTag("TubeTile");
-    //    foreach(GameObject t in tiles)
-    //    {
-    //        if (t.TryGetComponent<TubeTile>(out TubeTile tileScript)) 
-    //            tileScript.enabled = false;
-    //    }
-    //}
+    void SendTileRotation(Pipe p)
+    {
+        byte[] tilePacket = serializer.SerializeTile(p);
+        TCPconnection.SendPacket(tilePacket);
+    }
+
 
 }

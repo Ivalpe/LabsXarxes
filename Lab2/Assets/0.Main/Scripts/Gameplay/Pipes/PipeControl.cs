@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO.Pipes;
 using Unity.VisualScripting;
@@ -13,9 +14,32 @@ public class Pipe
     public Vector3 boardPos = Vector3.zero;
     public GameObject prefab = null;
 
+    public GameObject tileGO = new GameObject();
+    
+
     public Color tileColor = Color.white;
 
     public int rotIndex = 0;
+
+
+    //public void EnableEmission()
+    //{
+
+    //    tileGO.GetComponent<Renderer>().material.SetColor("_EmissionColor", tileColor * 0.5f);
+
+    //    //StartCoroutine(DisableEmission());
+    //}
+
+    //public void DisableEmission()
+    //{
+
+    //    //mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+
+
+    //    tileGO.GetComponent<Renderer>().material.SetColor("_EmissionColor", Color.black);
+        
+
+    //}
 }
 
 public class PipeControl : MonoBehaviour
@@ -51,16 +75,6 @@ public class PipeControl : MonoBehaviour
         //    connectionManager.CreateBoard(pipeMap);
         //}
     }
-
-    //void ApplyTileColors()
-    //{
-    //    foreach(var p in pipeMap)
-    //    {
-    //        if(p.tileObj.TryGetComponent<Renderer>(out Renderer renderer)){
-    //           renderer.material.SetColor("_Color", p.tileColor);
-    //        }
-    //    }
-    //}
 
     void GenerateBoardData()
     {

@@ -221,15 +221,25 @@ public class MainSerializer : MonoBehaviour
             return data;
         }
 
-        public byte[] SerializeBoardChange(int xIndex, int yIndex, int rotIndex)
+        public byte[] SerializeTile(Pipe p)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
 
             writer.Write((byte)MsgType.BoardChange);
-            writer.Write(xIndex);
-            writer.Write(yIndex);
-            writer.Write(rotIndex);
+
+            int x = 0;
+            int y = 0;
+
+            if (p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+            {
+                x = tileScript.xIndex;
+                y = tileScript.yIndex;
+            }
+
+            writer.Write(x);
+            writer.Write(y);
+            
             
             byte[] data = stream.ToArray();
 
@@ -371,6 +381,9 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case MsgType.CubeRot:
                     networkManager.cudp.UDPUpdateCube(reader.ReadSingle());
+                    break;
+                case MsgType.BoardChange:
+                    networkManager.UpdateBoard(reader);
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");

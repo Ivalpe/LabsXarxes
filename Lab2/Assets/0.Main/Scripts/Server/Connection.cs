@@ -541,6 +541,14 @@ public class Connection : MonoBehaviour
         }
     }
 
+    public void TCPSendToAllClients(byte[] packet)
+    {
+        foreach(Socket s in m_clients)
+        {
+            SendPacketTCP(packet, s);
+        }
+    }
+
     public void UDPStartGame()
     {
         //Puzzle is finish
