@@ -67,18 +67,29 @@ public class ConnectionManager : MonoBehaviour
 
 
     //door variables
+    public enum DoorState
+    {
+        Opening,
+        Waiting,
+        Closing,
+        Closed
 
-    public int doorType = 1;
+    }
+    DoorState doorState = DoorState.Opening;
+    public float OpeningTimer = 3.0f;
+    public float WaitingTimer = 3.0f;
+    public float ClousingTimer = 3.0f;
+
     public float doorOpening = 0.0f;
-    private float maxOpening = 1.0f;
-    private float speedOpen = 5.0f;
-    private float totalCloseTime = 60.0f;
-    private float timeRemaining = 60.0f;
+    private float StateTimer = 0.0f;
+
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
     {
-        doorType = 1;
+        doorState = DoorState.Closed;
+        doorOpening = 0.0f;
+
         ParseCommandLine();
 
         if (autoStart)
@@ -111,7 +122,7 @@ public class ConnectionManager : MonoBehaviour
 
             float dt = Time.fixedDeltaTime;
 
-            
+             
             //update for each player
             foreach(var entry in playerInfoDic)
             {                
@@ -160,30 +171,43 @@ public class ConnectionManager : MonoBehaviour
                
                
             }
-
-            if (doorType == 1) // Abriendo rápido
+            switch (doorState)
             {
-                doorOpening += speedOpen * dt;
-                if (doorOpening >= maxOpening)
-                {
-                    doorOpening = maxOpening;
-                    timeRemaining = totalCloseTime;
-                    doorType = 2; // Pasa a cerrar lento
-                }
-            }
-            else if (doorType == 2) // Cerrando lento
-            {
-                timeRemaining -= dt;
-                float progressPercentage = timeRemaining / totalCloseTime;
-                doorOpening = maxOpening * progressPercentage;
+                case DoorState.Opening:
+                    doorOpening += dt / OpeningTimer;
 
-                if (timeRemaining <= 0 || doorOpening <= 0.0f)
-                {
-                    timeRemaining = 0;
+                    if (doorOpening >= 1.0f)
+                    {
+                        doorOpening = 1.0f;
+                        StateTimer = 0.0f;
+                        doorState = DoorState.Waiting;
+                    }
+                    break;
+
+                case DoorState.Waiting:
+                    doorOpening = 1.0f;
+                    StateTimer += dt;
+
+                    if (StateTimer >= WaitingTimer)
+                    {
+                        StateTimer = 0.0f;
+                        doorState = DoorState.Closing;
+                    }
+                    break;
+
+                case DoorState.Closing:
+                    doorOpening -= dt / ClousingTimer;
+
+                    if (doorOpening <= 0.0f)
+                    {
+                        doorOpening = 0.0f;
+                        doorState = DoorState.Closed;
+                    }
+                    break;
+               
+                case DoorState.Closed:
                     doorOpening = 0.0f;
-                    doorType = 0; // Cerrada del todo
-                    //isDoorClosed = true;
-                }
+                    break;
             }
 
             //send world info to all users
@@ -202,9 +226,10 @@ public class ConnectionManager : MonoBehaviour
         DontDestroyOnLoad(Camera.main);
 
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
-        
 
         isPlaying = true;
+        doorState = DoorState.Opening;
+        doorOpening = 0.0f;
     }
 
     public void SpawnServerPlayers(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
@@ -329,9 +354,8 @@ public class ConnectionManager : MonoBehaviour
 
     public void ResetDoorState()
     {
-       doorType = 1;
+       doorState = DoorState.Opening;
        doorOpening = 0.0f;
-       timeRemaining = 60.0f;
     }
 
     public void CreateBoard(Pipe[,] pipeMap, GameObject parent)

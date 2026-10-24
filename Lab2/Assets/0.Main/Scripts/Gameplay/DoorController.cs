@@ -6,8 +6,11 @@ public class DoorController : MonoBehaviour
     public Transform door_left;
     public Transform door_right;
 
-    private Vector3 initialLeftPos;
-    private Vector3 initialRightPos;
+    public Transform OpenedLeftPos;
+    public Transform OpenedRightPos;
+
+    private Vector3 ClosedLeftPos;
+    private Vector3 ClosedRightPos;
 
     ConnectionManager connectionManager;
 
@@ -16,8 +19,8 @@ public class DoorController : MonoBehaviour
 
         if (door_left != null && door_right != null)
         {
-            initialLeftPos = door_left.position;
-            initialRightPos = door_right.position;
+            ClosedLeftPos = door_left.position;
+            ClosedRightPos = door_right.position;
         }
 
 
@@ -28,15 +31,21 @@ public class DoorController : MonoBehaviour
         if (ClientNetworkManager.Instance != null)
         {
             float networkOpening = ClientNetworkManager.Instance.currentDoorOpening;
-            UpdateMove(networkOpening);
+
+            networkOpening = Mathf.Clamp01(networkOpening);
+
+            if (door_left != null && OpenedLeftPos != null)
+            {
+                door_left.position = Vector3.Lerp(ClosedLeftPos, OpenedLeftPos.position, networkOpening);
+            }
+
+            if (door_right != null && OpenedRightPos != null)
+            {
+                door_right.position = Vector3.Lerp(ClosedRightPos, OpenedRightPos.position, networkOpening);
+            }
+
         }
     }
 
-    void UpdateMove(float opening)
-    {
-        if (door_left == null || door_right == null) return;
-
-        door_left.position = new Vector3(initialLeftPos.x + opening, initialLeftPos.y, initialLeftPos.z);
-        door_right.position = new Vector3(initialRightPos.x - opening, initialRightPos.y, initialRightPos.z);
-    }
+   
 }
