@@ -28,23 +28,34 @@ public class DoorController : MonoBehaviour
 
     void Update()
     {
+        float networkOpening = 0.0f;
+
         if (ClientNetworkManager.Instance != null)
         {
-            float networkOpening = ClientNetworkManager.Instance.currentDoorOpening;
-
-            networkOpening = Mathf.Clamp01(networkOpening);
-
-            if (door_left != null && OpenedLeftPos != null)
-            {
-                door_left.position = Vector3.Lerp(ClosedLeftPos, OpenedLeftPos.position, networkOpening);
-            }
-
-            if (door_right != null && OpenedRightPos != null)
-            {
-                door_right.position = Vector3.Lerp(ClosedRightPos, OpenedRightPos.position, networkOpening);
-            }
-
+            networkOpening = ClientNetworkManager.Instance.currentDoorOpening;
         }
+        else
+        {
+            ConnectionManager serverManager = FindAnyObjectByType<ConnectionManager>();
+            if (serverManager != null)
+            {
+                networkOpening = serverManager.doorOpening;
+            }
+        }
+
+        networkOpening = Mathf.Clamp01(networkOpening);
+
+        if (door_left != null && OpenedLeftPos != null)
+        {
+            door_left.position = Vector3.Lerp(ClosedLeftPos, OpenedLeftPos.position, networkOpening);
+        }
+
+        if (door_right != null && OpenedRightPos != null)
+        {
+            door_right.position = Vector3.Lerp(ClosedRightPos, OpenedRightPos.position, networkOpening);
+        }
+
+        
     }
 
    
