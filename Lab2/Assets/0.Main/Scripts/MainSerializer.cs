@@ -293,8 +293,8 @@ public class MainSerializer : MonoBehaviour
 
         public void HandleText(string text)
         {
-            //log chat message
-            networkManager.Log(text);
+           //log chat message
+           networkManager.Log(text);
         }
 
         public void HandleCommand(CommandType type, BinaryReader reader)
@@ -369,7 +369,24 @@ public class MainSerializer : MonoBehaviour
                     //just UDP ping --> no need to do anything 
                     break;
                 case MsgType.Text:
-                    networkManager.ctpc.TCPSendChatMessage(TCPfrom, reader.ReadString());
+                    //networkManager.ctpc.TCPSendChatMessage(TCPfrom, reader.ReadString());
+                    string messageText = reader.ReadString();
+
+                    if (messageText == "Win")
+                    {
+                        networkManager.cudp.UDPStartGame(); // El servidor arranca la partida
+                        networkManager.DebugWinGame();      // Cierra la puerta e imprime "Win Game"
+                    }
+                    else if (messageText == "Lose")
+                    {
+                        networkManager.cudp.UDPStartGame(); // El servidor arranca la partida
+                        networkManager.DebugLoseGame();     // Cierra la puerta e imprime "Lose Game"
+                    }
+                    else
+                    {
+                        // Si es texto normal, se envía al chat
+                        networkManager.ctpc.TCPSendChatMessage(TCPfrom, messageText);
+                    }
                     break;
                 case MsgType.Command:
                     //get command type first to handle it correctly

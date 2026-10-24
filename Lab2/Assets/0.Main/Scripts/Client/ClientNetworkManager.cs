@@ -157,10 +157,22 @@ public class ClientNetworkManager : MonoBehaviour
         //update canvas ui
         CanvasGui();
 
-        if (isHost && Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Puzzle is completed
+        if (isHost)
         {
-            UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
+            if (Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Inicar partida
+            {
+                UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha2)) //If the host press 2 --> Win
+            {
+                UDPconnection.SendPacket(serializer.SerializeText("Win"));
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha3)) //If the host press 3 --> Lose
+            {
+                UDPconnection.SendPacket(serializer.SerializeText("Lose"));
+            }
         }
+        
 
         if (isPlaying)
         {

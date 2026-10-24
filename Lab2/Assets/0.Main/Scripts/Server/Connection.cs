@@ -556,7 +556,7 @@ public class Connection : MonoBehaviour
         connectionManager.SetUpGameScene();
         connectionManager.Log("[SERVER] Started playing.");
 
-        connectionManager.ResetDoorState();
+        connectionManager.DebugNewGame();
 
         //get player list (for spawning prefabs)
         List<PlayerInfo> list = new List<PlayerInfo>(connectionManager.playerInfoDic.Values);

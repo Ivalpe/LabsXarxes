@@ -227,9 +227,8 @@ public class ConnectionManager : MonoBehaviour
 
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
 
-        isPlaying = true;
-        doorState = DoorState.Opening;
-        doorOpening = 0.0f;
+        DebugNewGame();
+
     }
 
     public void SpawnServerPlayers(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
@@ -352,10 +351,26 @@ public class ConnectionManager : MonoBehaviour
     }
 
 
-    public void ResetDoorState()
+    public void DebugNewGame()
     {
-       doorState = DoorState.Opening;
-       doorOpening = 0.0f;
+        isPlaying = true;
+        doorOpening = 0.0f;
+        doorState = DoorState.Opening;
+        Log("New Game");
+    }
+
+    public void DebugWinGame()
+    {
+        doorState = DoorState.Closed;
+        doorOpening = 0.0f;
+        Log("Win Game");
+    }
+
+    public void DebugLoseGame()
+    {
+        doorState = DoorState.Closed;
+        doorOpening = 0.0f;
+        Log("Lose Game");
     }
 
     public void CreateBoard(Pipe[,] pipeMap, GameObject parent)
