@@ -61,7 +61,11 @@ public class ClientNetworkManager : MonoBehaviour
 
     //Prefab player
     [SerializeField] private GameObject playerPrefab;
-    
+
+    [Header("End Game Screens")]
+    [SerializeField] private GameObject winScreenPanel;
+    [SerializeField] private GameObject loseScreenPanel;
+
     //Control all playersPrefabs
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
@@ -595,5 +599,48 @@ public class ClientNetworkManager : MonoBehaviour
         TCPconnection.SendPacket(tilePacket);
     }
 
+    public void RegisterEndGamePanels(GameObject win, GameObject lose)
+    {
+        winScreenPanel = win;
+        loseScreenPanel = lose;
+    }
 
+    public void ShowWinScreen()
+    { 
+        if (winScreenPanel != null) winScreenPanel.SetActive(true);
+        if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
+        Log("[GAME] Has ganado la partida");
+
+        StartCoroutine(EndGameSec());
+
+    }    
+    public void ShowLoseScreen()
+    {
+        if (winScreenPanel != null) winScreenPanel.SetActive(false);
+        if (loseScreenPanel != null) loseScreenPanel.SetActive(true);
+        Log("[GAME] Has perdido la partida");
+
+        StartCoroutine(EndGameSec());
+    }
+
+    System.Collections.IEnumerator EndGameSec()
+    {
+        yield return new WaitForSeconds(5f);
+
+        //reset game state and disconnect screens
+        if (winScreenPanel != null) winScreenPanel.SetActive(false);
+        if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
+
+        if (TCPconnection.IsRunning) TCPconnection.Disconnect();
+        if (UDPconnection.IsRunning) UDPconnection.Disconnect();
+
+        //clear local data
+        isPlaying = false;
+        isHost = false;
+        usersList.Clear();
+        playersToSpawn.Clear();
+        spawnedPlayers.Clear();
+
+        SceneManager.LoadScene("Client_WaitingRoom");
+    }
 }

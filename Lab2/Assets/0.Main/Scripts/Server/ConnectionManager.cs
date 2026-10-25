@@ -364,6 +364,9 @@ public class ConnectionManager : MonoBehaviour
         doorState = DoorState.Closed;
         doorOpening = 0.0f;
         Log("Win Game");
+
+        byte[] packet = serializer.SerializeTypes(false, CommandType.WinGame);
+        ctpc.TCPSendToAllClients(packet);
     }
 
     public void DebugLoseGame()
@@ -371,6 +374,9 @@ public class ConnectionManager : MonoBehaviour
         doorState = DoorState.Closed;
         doorOpening = 0.0f;
         Log("Lose Game");
+
+        byte[] packet = serializer.SerializeTypes(false, CommandType.LoseGame);
+        ctpc.TCPSendToAllClients(packet);
     }
 
     public void CreateBoard(Pipe[,] pipeMap, GameObject parent)
@@ -492,5 +498,6 @@ public class ConnectionManager : MonoBehaviour
         
         ctpc.TCPSendToAllClients(tilePacket);
     }
+
 
 }

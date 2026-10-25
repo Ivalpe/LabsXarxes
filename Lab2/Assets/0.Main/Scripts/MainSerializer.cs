@@ -32,7 +32,9 @@ public class MainSerializer : MonoBehaviour
         AddPlayer = 4,
         UserList = 5,
         Host = 6,
-        AssignID = 7
+        AssignID = 7,
+        WinGame = 8,
+        LoseGame = 9
     }
 
 
@@ -327,6 +329,12 @@ public class MainSerializer : MonoBehaviour
                     networkManager.userId = reader.ReadInt32();
                     networkManager.Log("[SERVER] Received unique user ID.");
                     break;
+                case CommandType.WinGame:
+                    networkManager.ShowWinScreen();
+                    break;
+                case CommandType.LoseGame:
+                    networkManager.ShowLoseScreen();
+                    break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");
                     break;
@@ -374,12 +382,12 @@ public class MainSerializer : MonoBehaviour
 
                     if (messageText == "Win")
                     {
-                        networkManager.cudp.UDPStartGame(); // El servidor arranca la partida
+                        
                         networkManager.DebugWinGame();      // Cierra la puerta e imprime "Win Game"
                     }
                     else if (messageText == "Lose")
                     {
-                        networkManager.cudp.UDPStartGame(); // El servidor arranca la partida
+                        
                         networkManager.DebugLoseGame();     // Cierra la puerta e imprime "Lose Game"
                     }
                     else
