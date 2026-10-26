@@ -30,13 +30,13 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 #### Object Movement
 * **Client controled -> Puzzle tiles**
- * Players can interact with the puzzle tiles to rotate them
- * The change is shown to all users 
- * Handled by UDP
+  * Players can interact with the puzzle tiles to rotate them
+  * The change is shown to all users 
+  * Handled by UDP
 * **Server controled -> Timer door**
- * The server itself moves a door within the game scene, slowly closing it as a built in timer to add time pressure to complete the puzzle
- * All players see the door movement at once
- * Handled by UDP
+  * The server itself moves a door within the game scene, slowly closing it as a built in timer to add time pressure to complete the puzzle
+  * All players see the door movement at once
+  * Handled by UDP
 
 ### Disconnect Handling
 * **TCP Shutdown:** Detects client window closures or connection drops. The server removes the client, closes sockets safely, and re-broadcasts the updated client list to remaining users.
@@ -57,32 +57,32 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
   * ServerBuild --> contains the executable server
 * To run locally on the same device, run both executables before connecting to the server
 * To run on separate devices:
- * On the device running the ServerBuild, use the console to run "ipconfig" to gain the ip
- * Type that ip into the device(s) using the ClientBuild before connecting to the server
+  * On the device running the ServerBuild, use the console to run "ipconfig" to gain the ip
+  * Type that ip into the device(s) using the ClientBuild before connecting to the server
 * Gameplay
- * **Movement:** WASD
- * **Jumping:** Space Bar
- * Simply interact with the pipe tiles by clicking the right mouse button, using the mouse to look around
-  * Remember! You can only interact with the tiles of the color you were assigned
+  * **Movement:** WASD
+  * **Jumping:** Space Bar
+  * Simply interact with the pipe tiles by clicking the right mouse button, using the mouse to look around
+    * Remember! You can only interact with the tiles of the color you were assigned
 * To open the Unity Project:
- * Open the folder Lab2 from Unity
- * Unity version: 6000.3.16f1
- * The main gameplay scene is located in 0.Main -> Scenes -> Client_GameplayScene
- * Other relevant scenes (all located inside 0.Main -> Scenes)
-  * Server -> the main server scene
-  * Client_WaitingRoom -> client waiting room which displays the chat and user list (the first visible scene when executing the ClientBuild)   
+  * Open the folder Lab2 from Unity
+  * Unity version: 6000.3.16f1
+  * The main gameplay scene is located in 0.Main -> Scenes -> Client_GameplayScene
+  * Other relevant scenes (all located inside 0.Main -> Scenes)
+    * Server -> the main server scene
+    * Client_WaitingRoom -> client waiting room which displays the chat and user list (the first visible scene when executing the ClientBuild)   
 
 ## Team
 * Ivan Alvarez - [Ivalpe](https://github.com/Ivalpe)
- * Puzzle tile logic (randomly generated board, check if puzzle is solved)
+  * Puzzle tile logic (randomly generated board, check if puzzle is solved)
 * Lara Guevara - [LaraGuevara](https://github.com/LaraGuevara)
- * Serializer script
- * Player movement
+  * Serializer script
+  * Player movement
 * Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
- * 
+  * 
 * Maria Besora - [mariabeo](https://github.com/mariabeo)
- * 
+  * 
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
- * 
+  * 
 * Jana Puig - [JanaPuig](https://github.com/JanaPuig)
- * 
+  * 
