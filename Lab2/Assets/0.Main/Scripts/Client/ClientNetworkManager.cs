@@ -161,6 +161,8 @@ public class ClientNetworkManager : MonoBehaviour
         //update canvas ui
         CanvasGui();
 
+
+
         if (isHost)
         {
             if (Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Inicar partida

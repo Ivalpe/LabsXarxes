@@ -339,8 +339,8 @@ public class Connection : MonoBehaviour
 
         lock (usersConnected)
         {
-            //check if user disconnected is host
-            if (client == hostSocket) noHost = true;
+            
+            
 
             // remove disconnected client from list
             if (usersConnected.TryGetValue(client, out PlayerInfo clientPlayer))
@@ -353,8 +353,6 @@ public class Connection : MonoBehaviour
                 usersConnected.Remove(client);
             }
 
-            if (noHost)
-            {
                 hostSocket = null;
                 host = false;
 
@@ -362,25 +360,6 @@ public class Connection : MonoBehaviour
                 remainingClients = new List<Socket>(usersConnected.Keys);
                 usersConnected.Clear();
                 connectionManager.playerInfoDic.Clear();
-            }
-            else
-            {
-                //create new user list (after removing disconnected user)
-                foreach (var player in usersConnected.Values)
-                {
-                    if (!string.IsNullOrEmpty(player.playerName)) updatedClientList.Add(player.playerName);
-                }
-
-                //get all remaining sockets
-                remainingClients = new List<Socket>(usersConnected.Keys);
-
-                //if no users --> no host user
-                if (usersConnected.Count == 0)
-                {
-                    host = false;
-                    hostSocket = null;
-                }
-            }
         }
 
         lock (m_clients)
@@ -389,21 +368,15 @@ public class Connection : MonoBehaviour
             if (noHost) m_clients.Clear();
         }
 
-        Log("[SERVER] " + clientName + " disconnected");
+        Log("[SERVER] " + clientName + " disconnected. Closing room for all.");
 
-        if (noHost)
-        {
+        
             //kick everyone if host is gone
-            foreach (var otherClient in remainingClients) CloseSocket(otherClient);
-        }
-        else
-        {
-            foreach (var user in usersConnected)
+            foreach (var otherClient in remainingClients) 
             {
-                //send user list
-                SendPacketTCP(serializer.SerializeUserList(updatedClientList), user.Key);
+                CloseSocket(otherClient);
             }
-        }
+            
 
         CloseSocket(client);
     }

@@ -34,7 +34,8 @@ public class MainSerializer : MonoBehaviour
         Host = 6,
         AssignID = 7,
         WinGame = 8,
-        LoseGame = 9
+        LoseGame = 9,
+        PlayersDisconected = 10
     }
 
 
@@ -383,12 +384,12 @@ public class MainSerializer : MonoBehaviour
                     if (messageText == "Win")
                     {
                         
-                        networkManager.DebugWinGame();      // Cierra la puerta e imprime "Win Game"
+                        networkManager.DebugWinGame();      
                     }
                     else if (messageText == "Lose")
                     {
                         
-                        networkManager.DebugLoseGame();     // Cierra la puerta e imprime "Lose Game"
+                        networkManager.DebugLoseGame();     
                     }
                     else
                     {
