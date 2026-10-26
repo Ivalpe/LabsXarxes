@@ -1,11 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
-using System.IO.Pipes;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static TubeTile;
-
 public class Pipe
 {
     public int exit1, exit2;
@@ -15,7 +9,7 @@ public class Pipe
     public GameObject prefab = null;
 
     public GameObject tileGO = new GameObject();
-    
+
 
     public Color tileColor = Color.white;
 
@@ -37,14 +31,14 @@ public class Pipe
 
 
     //    tileGO.GetComponent<Renderer>().material.SetColor("_EmissionColor", Color.black);
-        
+
 
     //}
 }
 
 public class PipeControl : MonoBehaviour
 {
-
+    public static PipeControl Instance { get; private set; }
     public GameObject cornerTile, straightTile;
     // PIPES PUZZLE https://hexapipes.vercel.app/custom
 
@@ -60,6 +54,8 @@ public class PipeControl : MonoBehaviour
 
     public static System.Action<Pipe[,]> OnBoardCreated;
 
+    ClientNetworkManager networkManager;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -67,6 +63,9 @@ public class PipeControl : MonoBehaviour
         GenerateBoardData();
 
         SetUpDetectArea();
+
+        //get network manager
+        networkManager = ClientNetworkManager.Instance;
 
         //connectionManager = FindAnyObjectByType<ConnectionManager>();
 
@@ -81,7 +80,7 @@ public class PipeControl : MonoBehaviour
         //Initialize the pipes
         pipeMap = new Pipe[10, 5];
 
-        int[] sol = { 2, 2, 0, 1, 0, 
+        int[] sol = { 2, 2, 0, 1, 0,
                       2, 0, 0, 2, 2,
                       2, 1, 2, 2 ,2,
                       2, 0, 0, 2, 2,
@@ -109,8 +108,8 @@ public class PipeControl : MonoBehaviour
                 }
                 else if (sol[indexSol] == 1)
                 {
-                    p.exit1 = 1;
-                    p.exit2 = 3;
+                    p.exit1 = 2;
+                    p.exit2 = 4;
                     p.prefab = straightTile;
                     p.type = 1;
                 }
@@ -129,6 +128,7 @@ public class PipeControl : MonoBehaviour
                         p.prefab = straightTile;
                     }
                     p.type = r; //type
+
                 }
 
                 indexSol++;
@@ -136,7 +136,7 @@ public class PipeControl : MonoBehaviour
                 r = Random.Range(0, 4); //random rotation
 
                 p.rotIndex = r;
-                
+
                 p.exit1 += r;
                 p.exit2 += r;
 
@@ -195,6 +195,65 @@ public class PipeControl : MonoBehaviour
             sentToServer = true;
         }
     }
+
+    public bool VictoryCheck()
+    {
+        int xp = 4, yp = 0;
+
+        Pipe p;
+        int dir = 2;
+        bool stop = false;
+        int pieza = 0;
+
+        while (!stop)
+        {
+            try
+            {
+                p = pipeMap[xp, yp];
+
+
+                dir = dir + 2 > 4 ? dir - 2 : dir + 2;
+                if (p.exit1 == dir || p.exit2 == dir)
+                {
+                    if (p.exit1 == dir)
+                        dir = p.exit2;
+                    else if (p.exit2 == dir)
+                        dir = p.exit1;
+
+                    switch (dir)
+                    {
+                        case 1:
+                            yp += 1;
+                            break;
+                        case 2:
+                            xp += 1;
+                            break;
+                        case 3:
+                            yp -= 1;
+                            break;
+                        case 4:
+                            xp -= 1;
+                            break;
+
+
+                    }
+                    Debug.Log("PIEZAS BUENA COLOCADAS: " + pieza++);
+
+                    if (xp == 0 && yp == 9 && (p.exit1 == 2 || p.exit2 == 2))
+                    {
+                        if (networkManager.isHost) networkManager.UDPconnection.SendPacket(networkManager.serializer.SerializeText("Win"));
+                        stop = true;
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                stop = true;
+            }
+        }
+        return false;
+    }
+
 
 
 }

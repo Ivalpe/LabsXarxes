@@ -12,6 +12,8 @@ public class TubeTile : MonoBehaviour
     float elapsedTime = 0;
     float emissionTimer = 0f;
 
+    public PipeControl pipeControl;
+
     public int xIndex = 0, yIndex = 0; // client & server fill them in
 
     public Color tileColor;
@@ -22,7 +24,9 @@ public class TubeTile : MonoBehaviour
         mat = GetComponent<Renderer>().material;
         
         mat.SetColor("_EmissionColor", Color.black);
-        
+
+        pipeControl = PipeControl.Instance;
+
         //tileColor = mat.GetColor("_Color"); --> gets initiated with prefab color
     }
     public void EnableEmission()
@@ -71,11 +75,14 @@ public class TubeTile : MonoBehaviour
         }
 
         rotating = false;
+
         p.rotIndex++;
         p.exit1++;
         p.exit2++;
+
         elapsedTime = 0;
         
+        pipeControl.VictoryCheck();
     }
 
     public Color GetPlayerColor()
