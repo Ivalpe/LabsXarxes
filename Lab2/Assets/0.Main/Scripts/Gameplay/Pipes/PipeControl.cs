@@ -196,7 +196,7 @@ public class PipeControl : MonoBehaviour
         }
     }
 
-    public bool VictoryCheck()
+    public void VictoryCheck()
     {
         int xp = 4, yp = 0;
 
@@ -209,6 +209,7 @@ public class PipeControl : MonoBehaviour
         {
             try
             {
+                Debug.Log("PRIMERA PIEZA: " + pipeMap[4,0].exit1 + " " + pipeMap[4,0].exit2);
                 p = pipeMap[xp, yp];
 
 
@@ -245,13 +246,14 @@ public class PipeControl : MonoBehaviour
                         stop = true;
                     }
                 }
+                else stop = true;
             }
-            catch (System.Exception e)
+            catch (System.NullReferenceException n)
             {
                 stop = true;
+                break;
             }
         }
-        return false;
     }
 
 

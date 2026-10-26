@@ -25,7 +25,7 @@ public class TubeTile : MonoBehaviour
         
         mat.SetColor("_EmissionColor", Color.black);
 
-        pipeControl = PipeControl.Instance;
+        pipeControl = GetComponentInParent<PipeControl>();
 
         //tileColor = mat.GetColor("_Color"); --> gets initiated with prefab color
     }
