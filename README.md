@@ -81,8 +81,11 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
   * 
 * Maria Besora - [mariabeo](https://github.com/mariabeo)
-  * 
+  * Door controller
+  * Debug controlls
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
   * 
 * Jana Puig - [JanaPuig](https://github.com/JanaPuig)
-  * 
+  * Spawn +2 players
+  * Door controller
+  * Debug controlls
