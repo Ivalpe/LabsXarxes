@@ -6,6 +6,7 @@ public class DoorController : MonoBehaviour
     public Transform door_left;
     public Transform door_right;
 
+    //Limit for the opening of the door
     public Transform OpenedLeftPos;
     public Transform OpenedRightPos;
 
@@ -25,7 +26,7 @@ public class DoorController : MonoBehaviour
 
 
     }
-
+    //Slowly closes the door until its fully closed from the previously setted up pos
     void Update()
     {
         float networkOpening = 0.0f;

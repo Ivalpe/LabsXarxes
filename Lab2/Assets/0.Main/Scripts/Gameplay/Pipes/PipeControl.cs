@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 public class Pipe
 {
+    //Declare the two types of "exits" a pipe has to check if its being resolved well
     public int exit1, exit2;
+    //SETTING WHAT TYPE OF PIPE IT IS
     public int type = 0;//1 Recta como el 1 / 0 Curva como el 0
 
     public Vector3 boardPos = Vector3.zero;
@@ -15,32 +17,16 @@ public class Pipe
 
     public int rotIndex = 0;
 
-
-    //public void EnableEmission()
-    //{
-
-    //    tileGO.GetComponent<Renderer>().material.SetColor("_EmissionColor", tileColor * 0.5f);
-
-    //    //StartCoroutine(DisableEmission());
-    //}
-
-    //public void DisableEmission()
-    //{
-
-    //    //mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
-
-
-    //    tileGO.GetComponent<Renderer>().material.SetColor("_EmissionColor", Color.black);
-
-
-    //}
+   
 }
 
 public class PipeControl : MonoBehaviour
 {
+
+    //Set up the pipes with the tiles and the colors needed
     public static PipeControl Instance { get; private set; }
     public GameObject cornerTile, straightTile;
-    // PIPES PUZZLE https://hexapipes.vercel.app/custom
+    
 
     BoxCollider boardDetectArea;
     public List<Color> activePlayerColors = new List<Color>();
@@ -59,7 +45,7 @@ public class PipeControl : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-
+        //Creates the data to ensure a right path and randomizes the rest of the board
         GenerateBoardData();
 
         SetUpDetectArea();
@@ -67,12 +53,8 @@ public class PipeControl : MonoBehaviour
         //get network manager
         networkManager = ClientNetworkManager.Instance;
 
-        //connectionManager = FindAnyObjectByType<ConnectionManager>();
+       
 
-        //if(connectionManager != null)
-        //{
-        //    connectionManager.CreateBoard(pipeMap);
-        //}
     }
 
     void GenerateBoardData()
@@ -80,6 +62,7 @@ public class PipeControl : MonoBehaviour
         //Initialize the pipes
         pipeMap = new Pipe[10, 5];
 
+        //numbers 1 and 0 are part of the solution number 2 will be randomized
         int[] sol = { 2, 2, 0, 1, 0,
                       2, 0, 0, 2, 2,
                       2, 1, 2, 2 ,2,
@@ -170,7 +153,7 @@ public class PipeControl : MonoBehaviour
         boardDetectArea.center = new Vector3(0, 0, -1f);
     }
 
-
+    //Debug to check everything generates ok
     void PrintBoardData()
     {
         for (int j = pipeMap.GetLength(1) - 1; j >= 0; --j)
@@ -196,6 +179,7 @@ public class PipeControl : MonoBehaviour
         }
     }
 
+    //Check for the right path or good conections to reach the end /STILL IN PROGRESS/
     public void VictoryCheck()
     {
         int xp = 4, yp = 0;
@@ -238,7 +222,7 @@ public class PipeControl : MonoBehaviour
 
 
                     }
-                    Debug.Log("PIEZAS BUENA COLOCADAS: " + pieza++);
+                    Debug.Log("PIEZAS BIEN COLOCADAS: " + pieza++);
 
                     if (xp == 0 && yp == 9 && (p.exit1 == 2 || p.exit2 == 2))
                     {

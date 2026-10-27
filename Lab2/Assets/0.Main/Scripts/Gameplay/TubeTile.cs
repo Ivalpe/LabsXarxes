@@ -29,6 +29,8 @@ public class TubeTile : MonoBehaviour
 
         //tileColor = mat.GetColor("_Color"); --> gets initiated with prefab color
     }
+
+    //Emission to show what tile is being rotated 
     public void EnableEmission()
     {
         mat.EnableKeyword("_EMISSION");
@@ -62,6 +64,7 @@ public class TubeTile : MonoBehaviour
         
     }
 
+    //Rotation for the tiles in the board
     IEnumerator Rotate(Pipe p, Quaternion targetRot)
     {
         
