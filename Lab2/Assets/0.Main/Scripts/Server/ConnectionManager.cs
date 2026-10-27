@@ -8,14 +8,15 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using UnityEngine.XR;
+using static BoardLogic;
 using static MainSerializer;
 
 public class ConnectionManager : MonoBehaviour
 {
     [SerializeField] GameObject playerPrefab;
 
-    
 
+    public BoardLogic board;
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
 
@@ -220,6 +221,9 @@ public class ConnectionManager : MonoBehaviour
 
     public void SetUpGameScene()
     {
+        board = new BoardLogic();
+        board.Generate();
+
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
 
@@ -383,12 +387,20 @@ public class ConnectionManager : MonoBehaviour
     {
 
         Color[] playerColors = GetActiveColors();
+        parent.TryGetComponent(out PipeControl pc);
 
         for (int i = 0; i < pipeMap.GetLength(0); ++i)
         {
             for (int j = 0; j < pipeMap.GetLength(1); ++j)
             {
                 Pipe p = pipeMap[i, j];
+                PipeData d = board.map[i, j];
+
+                p.type = d.type;
+                p.rotIndex = d.rotIndex;
+                p.exit1 = d.exit1;
+                p.exit2 = d.exit2;
+                p.prefab = d.type == 0 ? pc.cornerTile : pc.straightTile;
                 p.tileGO = Instantiate(p.prefab, parent.gameObject.transform);
                 p.tileGO.transform.localPosition = p.boardPos;
                 p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
@@ -493,6 +505,8 @@ public class ConnectionManager : MonoBehaviour
         {
             tileScript.StartRotation(p);
         }
+
+        if (board.RotateTile(tileX, tileY)) DebugWinGame();
 
         byte[] tilePacket = serializer.SerializeTile(p);
         

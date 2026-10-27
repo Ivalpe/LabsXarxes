@@ -84,8 +84,7 @@ public class TubeTile : MonoBehaviour
         p.exit2++;
 
         elapsedTime = 0;
-        
-        pipeControl.VictoryCheck();
+       
     }
 
     public Color GetPlayerColor()
