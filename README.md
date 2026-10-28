@@ -8,14 +8,14 @@ https://github.com/Ivalpe/LabsXarxes/tree/main
 
 Pipes is a multiclient network game, in which players are challenged to complete pipe puzzles together, with each player having an assigned color and only capable of interacting with the puzzle tiles of their color. Built with simultaneous TCP and UDP communication, the project includes a lobby with a synchronized chat before entering the game.
 
-Clients can enter a server IP and custom display name to join the lobby room. The server dynamically updates connected player lists across all clients, assigns each user a color for gameplay and relays chat lines. The room's host may trigger the start of the game where all players can move, jump and interact with the puzzle board to play, all of which are streamed over UDP.
+Clients can enter a server IP and custom display name to join the lobby room. The server dynamically updates connected player lists across all clients, assigns each user a color for gameplay and relays chat lines. The room's host may trigger the start of the game where all players can move, jump (handled by UDP) and interact with the puzzle board to play (handled by TCP).
 
 ## Functionalities
 
 ### TCP \& UDP Networking
 
 * Server opens both TCP and UDP at once, as well as clients connect to both when connecting to the server
-* **TCP Network:** Used for lobby management (connected client list) and chat messaging.
+* **TCP Network:** Used for lobby management (connected client list), chat messaging, board / tile updates and win/lose screens
 * **UDP Network:** Used for low-latency state synchronization in the game scene (player movement, object movement) and heartbeat tracking (pings) to ensure clients are still connected.
 
 ### Lobby Management \& Dynamic Player Tracking
@@ -40,15 +40,16 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 #### Object Movement
 
-* **Client controled -> Puzzle tiles**
+* **Client-controlled -> Puzzle tiles**
 
-  * Players can interact with the puzzle tiles to rotate them
-  * The change is shown to all users
-  * Handled by UDP
-* **Server controled -> Timer door**
+  * Players can interact with the board by clicking on lit up puzzle tiles matching their color, which rotates them 90º clockwise
+  * The change is notified to the server, which changes the server board, and then it notifies all users so they update their own
+  * Handled by TCP
+
+* **Server-controlled -> Timer door**
 
   * The server itself moves a door within the game scene, slowly closing it as a built in timer to add time pressure to complete the puzzle
-  * All players see the door movement at once
+  * All players see the door movement simultaneously
   * Handled by UDP
 
 ### Disconnect Handling
@@ -59,13 +60,26 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 ### Changes from Previous Iteration
 
 * **New Serializer script:** Sending packets is now serialized, sending a MsgType byte to identify what kind of message is being sent so the client or server know how to handle it
-* **Player Movement:** users in the game scene can use WASD and the space bar to move around the scene, with the movement being shown to all users in the scene
-* **Gameplay:** significant steps towards a fully playeable iteration, including randomly generated puzzle board, puzzle tile interaction (shown to all users), color assignments to users, win and defeat screens...
+* **Player Movement:** users in the game scene can use WASD and the Space Bar to move around the scene, with the movement being shown to all users in the game
+* **Gameplay:** significant steps towards a fully playable iteration, including randomly generated puzzle board, puzzle tile interaction (shown to all users), color assignments to users, win and defeat screens...
 
 ### Bonus Implementations
 
-* **Jumping:** players can use the space bar to jump
-* **More than two players:** more than two players can join, have a color assigned and interact with the board, with the bored using the number of colors that corresponds with the amount of players
+* **Jumping:** players can use the Space Bar to jump
+* **More than two players:** more than two players can join, have a color assigned and interact with the board, which uses tiles with as many colors as players connected.
+
+## Known Bugs
+
+* **Tile Emission:** when hovering the mouse over a tile and then moving it away while going past the screen limits, sometimes the emissive stays on.
+* **Tiles registering click on 2nd attempt:** when clicking on a tile to rotate it, very frequently this first click does not register, and the tile must be clicked a second time for it to actually rotate. 
+* **Tiles rotating twice:** Probably due to continuous mouse input, sometimes a tile can register two rotations within a single click, and it appears as if it rotated 180º.
+
+## Low Latency & Reliability
+
+* **Keeping lag low:** frequent data (player input, world positions, door state) is sent over UDP in small binary packets (`BinaryWriter` + 1-byte `MsgType`). A lost packet is simply replaced by the next one, so we never wait for retransmissions.
+* **Making sure important messages arrive:** lobby data, player IDs, the generated board, tile rotations and win/lose screens are sent over TCP, which guarantees delivery and order.
+
+  * Tile rotations are sent to the server as commands (not object rotations, so it's much computationally cheaper). The server applies them and broadcasts the result, so all clients share the same board.
 
 ## Instructions
 
@@ -78,22 +92,30 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
   * On the device running the ServerBuild, use the console to run "ipconfig" to gain the ip
   * Type that ip into the device(s) using the ClientBuild before connecting to the server
+
 * Gameplay
 
   * **Movement:** WASD
   * **Jumping:** Space Bar
-  * Simply interact with the pipe tiles by clicking the right mouse button, using the mouse to look around
+  * Simply interact with the pipe tiles by hovering the cursor to highlight them, and clicking with the Left Mouse Button to rotate them.
 
     * Remember! You can only interact with the tiles of the color you were assigned
+
+* Debug Controls (Host only!):
+  * **1**: automatically starts the game
+  * **2**: forces a win
+  * **3**: forces a defeat
+
 * To open the Unity Project:
 
   * Open the folder Lab2 from Unity
   * Unity version: 6000.3.16f1
-  * The main gameplay scene is located in 0.Main -> Scenes -> Client\_GameplayScene
+  * The main gameplay scene is located in 0.Main -> Scenes -> Client\_GameScene
   * Other relevant scenes (all located inside 0.Main -> Scenes)
 
     * Server -> the main server scene
     * Client\_WaitingRoom -> client waiting room which displays the chat and user list (the first visible scene when executing the ClientBuild)
+
 
 ## Team & Tasks
 
@@ -106,21 +128,21 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
   * Player movement
 * Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
 
-  * billboards
-  * win and defeat logic
+  * Billboards
+  * Win and Defeat Logic
 * Maria Besora - [mariabeo](https://github.com/mariabeo)
 
   * Door controller
-  * Debug controlls
+  * Debug controls
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
-  * Player Jump (Server Authoritative Physics)
+  * Player Jump (+Server Authoritative Physics)
   * Server Scene View
   * Board Spawning & Syncing
-  * Tile Emision & Rotation across Server and Clients
-\*
+  * Tile Emission & Rotation across Server and Clients
+
 * Jana Puig - [JanaPuig](https://github.com/JanaPuig)
 
   * Spawn +2 players
   * Door controller
-  * Debug controlls
+  * Debug controls
 
