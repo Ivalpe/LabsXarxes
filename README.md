@@ -95,7 +95,7 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
     * Server -> the main server scene
     * Client\_WaitingRoom -> client waiting room which displays the chat and user list (the first visible scene when executing the ClientBuild)
 
-## Team
+## Team & Tasks
 
 * Ivan Alvarez - [Ivalpe](https://github.com/Ivalpe)
 
@@ -113,6 +113,10 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
   * Door controller
   * Debug controlls
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
+  * Player Jump (Server Authoritative Physics)
+  * Server Scene View
+  * Board Spawning & Syncing
+  * Tile Emision & Rotation across Server and Clients
 \*
 * Jana Puig - [JanaPuig](https://github.com/JanaPuig)
 
