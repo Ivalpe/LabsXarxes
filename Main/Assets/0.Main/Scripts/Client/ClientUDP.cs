@@ -31,12 +31,15 @@ public class ClientUDP : MonoBehaviour
     readonly HashSet<int> m_warned = new HashSet<int>();
     volatile bool m_running;
 
+    NetSimulator netSim;
+
     public bool IsRunning { get { return m_running; } }
 
     void Start()
     {
         Application.runInBackground = true;
         networkManager = GetComponent<ClientNetworkManager>();
+        netSim = new NetSimulator(m_socket);
     }
 
     public void StartNetwork(string ip, string name, int portToUse)
@@ -92,8 +95,7 @@ public class ClientUDP : MonoBehaviour
 
         try
         {
-            int sent = SendRaw(m_socket, payload, m_serverEndPoint);                 // TODO 4
-            if (sent < 0) WarnTodo(4, "SendRaw() is not implemented yet");
+            SendRaw(m_socket, payload, m_serverEndPoint);                 // TODO 4
         }
         catch (SocketException e) { Log("[CLIENT] Send failed: " + e.SocketErrorCode); }
         catch (ObjectDisposedException) { }
@@ -208,9 +210,9 @@ public class ClientUDP : MonoBehaviour
     // --------------------------------------------------------------------------------- TODO 4 ---
     //  Goal: send 'data' through 'socket' to the address 'to', and return how many bytes went out.
     //  Look it up: Socket.SendTo in the docs.
-    int SendRaw(Socket socket, byte[] data, EndPoint to)
+    void SendRaw(Socket socket, byte[] data, EndPoint to)
     {
-        return socket.SendTo(data, to);
+        netSim.Send(data, to);
     }
 
     // --------------------------------------------------------------------------------- TODO 5 ---

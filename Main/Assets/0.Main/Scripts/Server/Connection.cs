@@ -19,6 +19,8 @@ public class Connection : MonoBehaviour
     ConnectionManager connectionManager;
     BaseSerializer serializer;
 
+    NetSimulator netSim;
+
     public int port;
     public string serverName = "MyServer";
     public bool autoStart = true;
@@ -36,6 +38,7 @@ public class Connection : MonoBehaviour
     float maxTime = 5f;
 
     readonly List<Socket> m_clients = new List<Socket>(); //TCP Clients
+    readonly Dictionary<Socket, NetSimulator> m_clientsSimulators = new Dictionary<Socket, NetSimulator>(); //simulators for TCP clients
     readonly HashSet<EndPoint> m_knownClients = new HashSet<EndPoint>(); //UDP Clients
 
     readonly List<Thread> m_threads = new List<Thread>();
@@ -142,6 +145,8 @@ public class Connection : MonoBehaviour
 
         connectionManager = GetComponent<ConnectionManager>();
         serializer = connectionManager.serializer;
+
+        if(connectionType == ConnectionType.UDP) netSim = new NetSimulator(socket);
     }
 
     public void StartNetwork()
@@ -220,7 +225,11 @@ public class Connection : MonoBehaviour
 
                 if (client == null) { WarnTodo(2, "AcceptClient() returned null"); return; }
 
-                lock (m_clients) m_clients.Add(client);
+                lock (m_clients)
+                {
+                    m_clients.Add(client);
+                    m_clientsSimulators[client] = new NetSimulator(client);
+                }
                 Log("[SERVER] Client connected: " + client.RemoteEndPoint);
 
                 //get assigned color
@@ -554,11 +563,16 @@ public class Connection : MonoBehaviour
         byte[] framed = new byte[4 + payload.Length];
         BitConverter.GetBytes(payload.Length).CopyTo(framed, 0);
         payload.CopyTo(framed, 4);
+        NetSimulator netSim;
 
         try
         {
-            int sent = SendRawTCP(to, framed);                                          // TODO 3
-            if (sent < 0) WarnTodo(3, "SendRaw() is not implemented yet");
+            if (m_clientsSimulators.TryGetValue(to, out netSim))
+            {
+                SendRawTCPSim(netSim, framed);
+            }
+                //int sent = SendRawTCP(to, framed);                                          // TODO 3
+            //if (sent < 0) WarnTodo(3, "SendRaw() is not implemented yet");
         }
         catch (SocketException e) { Log("[SERVER] Send failed: " + e.SocketErrorCode); }
         catch (ObjectDisposedException) { }
@@ -569,8 +583,7 @@ public class Connection : MonoBehaviour
 
         try
         {
-            int sent = SendRawUDP(socket, payload, to);                               // TODO 2
-            if (sent < 0) WarnTodo(2, "SendRaw() is not implemented yet");
+            SendRawUDP(socket, payload, to);                               // TODO 2
         }
         catch (SocketException e) { Log("[SERVER] Send failed: " + e.SocketErrorCode); }
         catch (ObjectDisposedException) { }
@@ -589,8 +602,12 @@ public class Connection : MonoBehaviour
     {
         return socket.Send(data);
     }
-    int SendRawUDP(Socket socket, byte[] data, EndPoint to)
+    void SendRawTCPSim(NetSimulator netSim, byte[] data)
     {
-        return socket.SendTo(data, to);   // the destination travels with every single message
+        netSim.Send(data);
+    }
+    void SendRawUDP(Socket socket, byte[] data, EndPoint to)
+    {
+        netSim.Send(data, to);   // the destination travels with every single message
     }
 }

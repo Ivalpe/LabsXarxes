@@ -28,12 +28,15 @@ public class ClientTCP : MonoBehaviour
     readonly HashSet<int> m_warned = new HashSet<int>();
     volatile bool m_running;
 
+    NetSimulator netSim;
+
     public bool IsRunning { get { return m_running; } }
 
     void Start()
     {
         Application.runInBackground = true;   // or the window without focus is paused
         networkManager = GetComponent<ClientNetworkManager>();
+        netSim = new NetSimulator(m_connection);
     }
 
     public void StartNetwork(string ip, string name, int portToUse)
@@ -100,8 +103,7 @@ public class ClientTCP : MonoBehaviour
 
         try
         {
-            int sent = SendRaw(m_connection, framed);                                // TODO 3
-            if (sent < 0) WarnTodo(3, "SendRaw() is not implemented yet");
+            SendRaw(m_connection, framed);                                // TODO 3
         }
         catch (SocketException e) { Log("[CLIENT] Send failed: " + e.SocketErrorCode); }
         catch (ObjectDisposedException) { }
@@ -214,9 +216,9 @@ public class ClientTCP : MonoBehaviour
     //  Goal: send 'data' through 'socket' and return how many bytes were sent.
     //  It is already framed, so send the whole array. Same call the server uses.
     //  Look it up: Socket.Send in the docs.
-    int SendRaw(Socket socket, byte[] data)
+    void SendRaw(Socket socket, byte[] data)
     {
-        return socket.Send(data);
+        netSim.Send(data);
     }
 
     // --------------------------------------------------------------------------------- TODO 4 ---
