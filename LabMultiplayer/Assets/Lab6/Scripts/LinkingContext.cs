@@ -42,8 +42,9 @@ public class LinkingContext
     //  Test scene when it works:  two objects called "Cube" get IDs 1 and 2
     public int Register(GameObject go)             // server, creates a new ID
     {
-        m_objects.Add(m_nextId, go);
-        return 0;
+        int id = m_nextId++;
+        m_objects.Add(id, go);
+        return id;
     }
 
     public void Register(GameObject go, int id)    // client, uses the ID it was given

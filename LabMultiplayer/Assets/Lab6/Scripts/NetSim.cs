@@ -51,7 +51,7 @@ public class NetSim
     {
         if (Random.value < dropChance) return;
         float delay = latency + Random.Range(-jitter, jitter);
-        m_queue.Add((Time.time * delay, data, to));
+        m_queue.Add((Time.time + delay, data, to));
     }
 
     // --------------------------------------------------------------------------------- TODO 5 ---
