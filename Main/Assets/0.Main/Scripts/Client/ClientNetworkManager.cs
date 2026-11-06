@@ -14,6 +14,9 @@ public class ClientNetworkManager : MonoBehaviour
     //static reference (for changing scenes)
     public static ClientNetworkManager Instance { get; private set; }
 
+    //bool to activate network sim
+    public bool UseNetworkSimulator = false;
+
     //serializer
     public BaseSerializer serializer;
 

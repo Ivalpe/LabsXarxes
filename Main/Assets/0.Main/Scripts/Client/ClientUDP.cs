@@ -73,12 +73,16 @@ public class ClientUDP : MonoBehaviour
         byte[] data;
         while (m_inbox.TryDequeue(out data))
             OnPacketReceived(data);
+
+        netSim.Update();
     }
 
     void ClientThread()
     {
         m_socket = StartClient();                                                    // TODO 1
         if (m_socket == null) { WarnTodo(1, "StartClient() returned null"); return; }
+
+        netSim.m_socket = m_socket;
 
         m_serverEndPoint = ServerEndPoint();                                         // TODO 2
         if (m_serverEndPoint == null) { WarnTodo(2, "ServerEndPoint() returned null"); return; }
@@ -212,7 +216,8 @@ public class ClientUDP : MonoBehaviour
     //  Look it up: Socket.SendTo in the docs.
     void SendRaw(Socket socket, byte[] data, EndPoint to)
     {
-        netSim.Send(data, to);
+        if (networkManager.UseNetworkSimulator) netSim.Send(data, to);
+        else socket.SendTo(data, to);
     }
 
     // --------------------------------------------------------------------------------- TODO 5 ---

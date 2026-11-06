@@ -28,15 +28,12 @@ public class ClientTCP : MonoBehaviour
     readonly HashSet<int> m_warned = new HashSet<int>();
     volatile bool m_running;
 
-    NetSimulator netSim;
-
     public bool IsRunning { get { return m_running; } }
 
     void Start()
     {
         Application.runInBackground = true;   // or the window without focus is paused
         networkManager = GetComponent<ClientNetworkManager>();
-        netSim = new NetSimulator(m_connection);
     }
 
     public void StartNetwork(string ip, string name, int portToUse)
@@ -218,7 +215,7 @@ public class ClientTCP : MonoBehaviour
     //  Look it up: Socket.Send in the docs.
     void SendRaw(Socket socket, byte[] data)
     {
-        netSim.Send(data);
+        socket.Send(data);
     }
 
     // --------------------------------------------------------------------------------- TODO 4 ---

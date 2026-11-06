@@ -14,7 +14,7 @@ public class ConnectionManager : MonoBehaviour
 {
     [SerializeField] GameObject playerPrefab;
 
-    
+    public bool UseNetworkSimulator = false;
 
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
