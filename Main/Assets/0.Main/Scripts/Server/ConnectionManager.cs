@@ -83,6 +83,8 @@ public class ConnectionManager : MonoBehaviour
     public float doorOpening = 0.0f;
     private float StateTimer = 0.0f;
 
+    public GameObject exitZone;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
     {
