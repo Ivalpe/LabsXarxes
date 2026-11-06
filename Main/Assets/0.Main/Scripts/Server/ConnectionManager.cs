@@ -75,14 +75,13 @@ public class ConnectionManager : MonoBehaviour
         Closed
 
     }
-    DoorState doorState = DoorState.Opening;
+    public DoorState doorState = DoorState.Opening;
     public float OpeningTimer = 3.0f;
     public float WaitingTimer = 3.0f;
-    public float ClousingTimer = 3.0f;
+    public float ClousingTimer = 60.0f;
 
     public float doorOpening = 0.0f;
     private float StateTimer = 0.0f;
-
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
@@ -212,7 +211,7 @@ public class ConnectionManager : MonoBehaviour
 
             //send world info to all users
             List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
-            byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening);
+            byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
             cudp.UDPSendToAllClients(worldPacket);
 
         }

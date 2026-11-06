@@ -84,7 +84,8 @@ public class ClientNetworkManager : MonoBehaviour
 
     //variable door
     public float currentDoorOpening = 0.0f;
-
+    public float currentClousingTimer = 60.0f;
+    public ConnectionManager.DoorState currentDoorState = ConnectionManager.DoorState.Closed;
     //game scene components
     //timer
     // ten times per second
@@ -253,6 +254,9 @@ public class ClientNetworkManager : MonoBehaviour
         if (reader.BaseStream.Position < reader.BaseStream.Length)
         {
             currentDoorOpening = reader.ReadSingle();
+            currentClousingTimer = reader.ReadSingle();
+            currentDoorState = (ConnectionManager.DoorState)reader.ReadInt32();
+
         }
     }
 

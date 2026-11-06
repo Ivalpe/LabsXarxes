@@ -146,7 +146,7 @@ public class MainSerializer : MonoBehaviour
             return stream.ToArray();
         }
         //for sending all player positions
-        public byte[] SerializeWorldPos(List<PlayerInfo> playerList, bool StartGame = false, float doorOpening=5.0f)
+        public byte[] SerializeWorldPos(List<PlayerInfo> playerList, bool StartGame = false, float doorOpening=0.0f, float clousingTimer = 3.0f, ConnectionManager.DoorState doorState = ConnectionManager.DoorState.Closed)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -181,6 +181,8 @@ public class MainSerializer : MonoBehaviour
             if (!StartGame)
             {
                 writer.Write(doorOpening);
+                writer.Write(clousingTimer);
+                writer.Write((int)doorState);
             }
 
             return stream.ToArray();
