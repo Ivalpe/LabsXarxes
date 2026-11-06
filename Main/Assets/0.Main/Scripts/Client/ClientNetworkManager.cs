@@ -5,6 +5,7 @@ using TMPro;
 using Unity.VectorGraphics;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using static MainSerializer;
 
@@ -29,6 +30,7 @@ public class ClientNetworkManager : MonoBehaviour
 
     //canvas ui components
     [SerializeField] TMP_Text Canvas_userList;
+    PlayerIconManager iconColorScript;
 
     //ping timer (UDP)jump
     float pingInterval = 1f;
@@ -46,6 +48,8 @@ public class ClientNetworkManager : MonoBehaviour
     public System.Action<byte> OnPlayerRegistered;
     public System.Action OnAllPlayersSpawned;
 
+    
+
     //public System.Action<Pipe> OnTileRotated;
 
     //list of colors
@@ -58,6 +62,10 @@ public class ClientNetworkManager : MonoBehaviour
         Color.magenta,
         Color.cyan
     };
+
+    
+
+
 
     //List for initial user spawning
     public List<PlayerInfo> playersToSpawn = new List<PlayerInfo>();
@@ -558,6 +566,11 @@ public class ClientNetworkManager : MonoBehaviour
             var renderer = instancePlayer.GetComponentInChildren<Renderer>();
             Color color = playerColors[player.colorIndex];
             if(renderer != null) renderer.material.SetColor("_Color", color);
+
+            //change color icon
+            iconColorScript = FindAnyObjectByType<PlayerIconManager>();
+            iconColorScript.SetPlayerIconColor(color);
+
             Rigidbody rb = instancePlayer.GetComponent<Rigidbody>();
             if (rb)
                 rb.isKinematic = true; //otherwise you can't use rb.MovePosition or rb.MoveRotation
