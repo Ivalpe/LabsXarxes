@@ -1,0 +1,14 @@
+lo que nos pide para la entrega (ULTRA PRIORIDAD)
+- pasar todo a ids
+- organizar un poco el codigo para que network sea solo network
+- hacer esto del replication
+- poner el modo debug F1 + F2 de subir los valores del Simulator (que el simulador ya existe, tambien podemos poner que F3 o algo lo desactiva/activa)
+
+Gameplay (prioridad)
+- comprobar victory
+- ui tutorial 
+
+Cosas bonitas (que estaria bien tenerlo pero no prioridad)
+- musica opcional
+- modelos de players de gato
+- hacer scene bonito
