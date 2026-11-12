@@ -29,6 +29,8 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Lab7
@@ -53,7 +55,9 @@ namespace Lab7
             //  packet is old, ignore all of it. Otherwise remember it in m_lastSequence (slide 15).
             //  Test scene when it works:  (h) old packet after a newer one is dropped
             // your code here
-            Lab7Todo.NotDone(3, "ReadPacket() does not read the sequence yet");
+            int sequenceNum = reader.ReadInt32();
+            if(sequenceNum > m_lastSequence) m_lastSequence = sequenceNum;
+            else return;
 
             int count = reader.ReadInt32();
             for (int i = 0; i < count; i++)
@@ -69,7 +73,7 @@ namespace Lab7
                     //  already gone, nothing to do (slide 13).
                     //  Test scene when it works:  (d) Destroy, the client has 2 objects
                     // your code here
-                    Lab7Todo.NotDone(5, "ReadPacket() destroys nothing yet");
+                    if (go != null) { Destroy(go); m_linking.Unregister(id); }
                     continue;                                    // unknown ID, already gone
                 }
 

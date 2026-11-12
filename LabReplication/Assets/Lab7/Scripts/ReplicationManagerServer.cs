@@ -87,7 +87,9 @@ namespace Lab7
             //  then how many entries follow (slides 8 and 11). Each packet's sequence is one more.
             //  Test scene when it works:  (a) N=0, the empty packet is 9 bytes
             // your code here
-            Lab7Todo.NotDone(1, "WritePacket() writes no header yet");
+            writer.Write((byte)MsgType.Replication);
+            writer.Write(m_sequence++);
+            writer.Write(m_pending.Count);
 
             foreach (KeyValuePair<int, ReplicationAction> entry in m_pending)
             {
@@ -96,7 +98,14 @@ namespace Lab7
                 //  Otherwise its type, then its own fields. The object is in m_linking, NetObject.Write writes it (slide 11).
                 //  Test scene when it works:  (c) Update of a player and a bullet is 9 + 26 + 22 = 57 bytes
                 // your code here
-                Lab7Todo.NotDone(2, "WritePacket() writes no entries yet");
+                writer.Write(entry.Key);
+                writer.Write((byte)entry.Value);
+                if(entry.Value != ReplicationAction.Destroy)
+                {
+                    NetObject obj = m_linking.Find(entry.Key).GetComponent<NetObject>();
+                    writer.Write(obj.type);
+                    obj.Write(writer);
+                }
             }
             m_pending.Clear();
             return stream.ToArray();
