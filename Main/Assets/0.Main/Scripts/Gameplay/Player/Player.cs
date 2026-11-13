@@ -41,7 +41,7 @@ public class Player : MonoBehaviour
     {
         boardScript = GameObject.FindAnyObjectByType<PipeControl>();
         //find the client network manager game object
-        ClientNetworkManager.Instance.RegisterPlayerScript(this);
+        if (ClientNetworkManager.Instance != null) ClientNetworkManager.Instance.RegisterPlayerScript(this);
 
     }
 

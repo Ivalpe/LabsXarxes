@@ -11,6 +11,7 @@ using static MainSerializer;
 
 public class ClientNetworkManager : NetworkManager
 {
+
     //static reference (for changing scenes)
     public static ClientNetworkManager Instance { get; private set; }
 
@@ -26,9 +27,6 @@ public class ClientNetworkManager : NetworkManager
 
     //user/player id
     public int userId;
-
-    //canvas ui components
-    [SerializeField] TMP_Text Canvas_userList;
 
     //ping timer (UDP)jump
     float pingInterval = 1f;
@@ -54,7 +52,7 @@ public class ClientNetworkManager : NetworkManager
         Color.red,
         Color.blue,
         Color.green,
-        Color.yellow,
+        Color.orange,
         Color.magenta,
         Color.cyan
     };
@@ -71,6 +69,8 @@ public class ClientNetworkManager : NetworkManager
 
     //Control all playersPrefabs
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
+    public Dictionary<int, Vector3> playerTargetPosition = new Dictionary<int, Vector3>();
+    public Dictionary<int, float> playerTargetRotation = new Dictionary<int, float>();
 
     //ui components
     public string serverIp = "127.0.0.1";
@@ -80,22 +80,12 @@ public class ClientNetworkManager : NetworkManager
     public string userName = "Player";
     public string text = "Type here";
     public bool autoStart = false;
-    public bool isHost = false;
 
     //variable door
     public float currentDoorOpening = 0.0f;
     public float currentClousingTimer = 60.0f;
     public ConnectionManager.DoorState currentDoorState = ConnectionManager.DoorState.Closed;
     //game scene components
-    //timer
-    // ten times per second
-    float sendInterval = 1f / 10f;
-    float timer = 0f;
-    //cube rotation
-    public float cubeRot = 0f;
-    //game scene's cube
-    Transform theCube;
-
     //player component
     Player playerComponent;
 
@@ -105,7 +95,7 @@ public class ClientNetworkManager : NetworkManager
     //on play --> stop full ui 
     bool isPlaying = false;
 
-    public ClientNetworkManager(string name, string ip)
+    public override void InstantiateConnection(string name, string ip = null)
     {
         userName = name;
         serverIp = ip;
@@ -194,50 +184,32 @@ public class ClientNetworkManager : NetworkManager
         ManagePing();
 
         //update canvas ui
-        CanvasGui();
+        //CanvasGui();
+       
 
-
-
-        if (isHost)
+        //smoothly apply transform (done here instead of OnWorldUpdate to avoid jitter)
+        foreach(var player in spawnedPlayers)
         {
-            if (Input.GetKeyDown(KeyCode.Alpha1)) //If the host press 1 --> Inicar partida
+            int id = player.Key;
+            GameObject playerObj = player.Value;
+            if (playerObj == null) continue;
+
+            //position
+            if(playerTargetPosition.TryGetValue(id, out Vector3 targetPos))
             {
-                UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
+                playerObj.transform.position = Vector3.Lerp(playerObj.transform.position, targetPos, Time.deltaTime * 20f);
             }
-            if (Input.GetKeyDown(KeyCode.Alpha2)) //If the host press 2 --> Win
+            
+            //rotation
+            if(userId != id)
             {
-                UDPconnection.SendPacket(serializer.SerializeText("Win"));
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha3)) //If the host press 3 --> Lose
-            {
-                UDPconnection.SendPacket(serializer.SerializeText("Lose"));
+                if (playerTargetRotation.TryGetValue(id, out float targetYaw))
+                {
+                    Quaternion targetRot = Quaternion.Euler(0, targetYaw, 0);
+                    playerObj.transform.rotation = Quaternion.Slerp(playerObj.transform.rotation, targetRot, Time.deltaTime * 20f);
+                }
             }
         }
-        
-
-        if (isPlaying)
-        {
-            //apply rotation
-            if (theCube != null) theCube.eulerAngles = new Vector3(0, cubeRot, 0);
-            //if playing --> send cube info
-            timer += Time.deltaTime;
-            if (timer >= sendInterval)
-            {
-                //send rotation
-                SendCubeRot(cubeRot);
-                timer = 0f;
-            }
-        }
-
-        ////smoothly apply transform (done here instead of OnWorldUpdate to avoid jitter)
-        //if (spawnedPlayers.TryGetValue(userId, out var player))
-        //{
-
-        //    Vector3.MoveTowards(player.transform.position, targetPos, Time.deltaTime);
-        //    Vector3.RotateTowards(player.transform.rotation.eulerAngles, targetRot.eulerAngles, Time.deltaTime, 0.0f);
-
-
-        //}
     }
 
     public void ManagePing()
@@ -276,8 +248,15 @@ public class ClientNetworkManager : NetworkManager
             if (spawnedPlayers.TryGetValue(id, out var player))
             {
                 //no need to get the rb here, since the server already calculated positions with rb.MovePosition and stored them in playerinfo
-                player.transform.position = pos;
-                if (id != userId) player.transform.rotation = Quaternion.Euler(0, rotY, 0);
+                playerTargetPosition[id] = pos;
+
+                
+                //player.transform.position = pos;
+                if (id != userId)
+                {
+                    playerTargetRotation[id] = rotY;
+                    //player.transform.rotation = Quaternion.Euler(0, rotY, 0);
+                }
 
             }
         }
@@ -403,110 +382,83 @@ public class ClientNetworkManager : NetworkManager
         else Debug.Log("BoardScript not found when updating board!");
     }
 
-    public void RegisterCube(Transform cube)
-    {
-        theCube = cube;
-    }
-
     public void RegisterPlayerScript(Player comp)
     {
         playerComponent = comp;
         OnPlayerRegistered?.Invoke(playerColorIndex);
     }
 
-    void CanvasGui()
+    public override List<String> GetUserList()
     {
-        if(Canvas_userList != null)
-        {
-            //display user list
-            Canvas_userList.text = "User List:\n";
-            foreach (var user in usersList)
-            {
-                if (user != null) Canvas_userList.text += (user + "\n");
-            }
-        }
+        return usersList;
     }
 
     void OnGUI()
     {
-        if (!isPlaying)
-        {
-            GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-            GUILayout.Label("CLIENT   port " + port);
+        //if (!isPlaying)
+        //{
+        //    GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
+        //    GUILayout.Label("CLIENT   port " + port);
 
-            GUILayout.BeginHorizontal();
-            if (!TCPconnection.IsRunning && !UDPconnection.IsRunning)
-            {
-                //editable username before connecting to server
-                GUILayout.Label("Username:", GUILayout.Width(70));
-                userName = GUILayout.TextField(userName, GUILayout.Width(110));
-                //server ip layout
-                GUILayout.Label("Server IP:", GUILayout.Width(70));
-                serverIp = GUILayout.TextField(serverIp, GUILayout.Width(120));
-                //connect button
-                if (GUILayout.Button("Connect", GUILayout.Width(110)))
-                {
-                    //start both tcp and udp networks
-                    TCPconnection.StartNetwork(serverIp, userName, TCPport);
-                    UDPconnection.StartNetwork(serverIp, userName, UDPport);
-                }
-            }
-            else
-            {
-                //username shown
-                GUILayout.Label("Username: " + userName);
-                //chat text UI
-                text = GUILayout.TextField(text, GUILayout.Width(120));
-                //send chat message to server (using TCP)
-                if (GUILayout.Button("Send", GUILayout.Width(110))) TCPconnection.SendPacket(serializer.SerializeText(text));
-                //if host --> play button
-                if (isHost)
-                {
-                    if (GUILayout.Button("Play", GUILayout.Width(110)))
-                    {
-                        BeginPlay();
-                        isPlaying = true;
-                    }
-                }
-                //disconnect button
-                if (GUILayout.Button("Disconnect", GUILayout.Width(110)))
-                {
-                    //disconnect both networks
-                    TCPconnection.Disconnect();
-                    UDPconnection.Disconnect();
+        //    GUILayout.BeginHorizontal();
+        //    if (!TCPconnection.IsRunning && !UDPconnection.IsRunning)
+        //    {
+        //        //editable username before connecting to server
+        //        GUILayout.Label("Username:", GUILayout.Width(70));
+        //        userName = GUILayout.TextField(userName, GUILayout.Width(110));
+        //        //server ip layout
+        //        GUILayout.Label("Server IP:", GUILayout.Width(70));
+        //        serverIp = GUILayout.TextField(serverIp, GUILayout.Width(120));
+        //        //connect button
+        //        if (GUILayout.Button("Connect", GUILayout.Width(110)))
+        //        {
+        //            //start both tcp and udp networks
+        //            TCPconnection.StartNetwork(serverIp, userName, TCPport);
+        //            UDPconnection.StartNetwork(serverIp, userName, UDPport);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        //username shown
+        //        GUILayout.Label("Username: " + userName);
+        //        //chat text UI
+        //        text = GUILayout.TextField(text, GUILayout.Width(120));
+        //        //send chat message to server (using TCP)
+        //        if (GUILayout.Button("Send", GUILayout.Width(110))) TCPconnection.SendPacket(serializer.SerializeText(text));
+        //        //disconnect button
+        //        if (GUILayout.Button("Disconnect", GUILayout.Width(110)))
+        //        {
+        //            //disconnect both networks
+        //            TCPconnection.Disconnect();
+        //            UDPconnection.Disconnect();
 
-                    //clear user list
-                    usersList.Clear();
-                    playersToSpawn.Clear();
-                    spawnedPlayers.Clear();
-                }
-            }
+        //            //clear user list
+        //            usersList.Clear();
+        //            playersToSpawn.Clear();
+        //            spawnedPlayers.Clear();
+        //        }
+        //    }
 
-            GUILayout.EndHorizontal();
+        //    GUILayout.EndHorizontal();
 
-            lock (m_log)
-            {
-                for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
-                    GUILayout.Label(m_log[i]);
-            }
+        //    lock (m_log)
+        //    {
+        //        for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
+        //            GUILayout.Label(m_log[i]);
+        //    }
 
-            GUILayout.EndArea();
-        }
+        //    GUILayout.EndArea();
+        //}
     }
 
-    public void BeginPlay()
+    public void SetPlayerColorIndex(byte index)
     {
-        if (isHost)
-        {
-            //send server the command to start the game
-            UDPconnection.SendPacket(serializer.SerializeTypes(false, CommandType.StartGame));
-        }
+        playerColorIndex = index;
     }
 
-    public void SendCubeRot(float rot)
+    public override void SendChatMessage(string msg)
     {
-        //send current cube rotation 
-        if (isHost) UDPconnection.SendPacket(serializer.SerializeCubeRot(cubeRot));
+        TCPconnection.SendPacket(serializer.SerializeText(msg, CommandType.None, playerColorIndex));
     }
     public void LoadGameScene(BinaryReader reader)
     {
@@ -614,8 +566,12 @@ public class ClientNetworkManager : NetworkManager
                 //assign color to player script
 
                 playerColorIndex = player.colorIndex; //caching it to use in an action
+                if (instancePlayer.TryGetComponent(out Player localPlayerScript))
+                {
+                    localPlayerScript.SetPlayerColor(player.colorIndex);
+                }
                 //OnPlayerRegistered += SetClientPlayerColor;
-                
+
             }
 
             //add to dictionary
@@ -676,7 +632,7 @@ public class ClientNetworkManager : NetworkManager
 
         //clear local data
         isPlaying = false;
-        isHost = false;
+
         usersList.Clear();
         playersToSpawn.Clear();
         spawnedPlayers.Clear();

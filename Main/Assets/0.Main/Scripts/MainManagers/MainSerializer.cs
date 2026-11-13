@@ -43,7 +43,7 @@ public class MainSerializer : MonoBehaviour
     {
         //SERIALIZERS
         //for chat messages + commands with string variables
-        public byte[] SerializeText(string text, CommandType command = CommandType.None)
+        public byte[] SerializeText(string text, CommandType command = CommandType.None, byte colorIndex = 0)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -51,8 +51,9 @@ public class MainSerializer : MonoBehaviour
             if(command == CommandType.None)
             {
                 writer.Write((byte)MsgType.Text);
-                //write the given text
+                //write the given text + color
                 writer.Write(text);
+                writer.Write((byte)colorIndex);
             }
             else
             {
@@ -112,7 +113,7 @@ public class MainSerializer : MonoBehaviour
             return stream.ToArray();
         }
         //for sending player ID
-        public byte[] SerializePlayerId(int id)
+        public byte[] SerializePlayerId(int id, byte colorIndex)
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -121,6 +122,7 @@ public class MainSerializer : MonoBehaviour
             writer.Write((byte)CommandType.AssignID);
 
             writer.Write(id);
+            writer.Write((byte)colorIndex);
 
             return stream.ToArray();
         }
@@ -276,10 +278,7 @@ public class MainSerializer : MonoBehaviour
                     HandleCommand(command, reader);
                     break;
                 case MsgType.Text:
-                    HandleText(reader.ReadString());
-                    break;
-                case MsgType.CubeRot:
-                    networkManager.cubeRot = reader.ReadSingle();
+                    HandleText(reader.ReadString(), reader);
                     break;
                 case MsgType.World:
                     networkManager.OnWorldUpdate(reader);
@@ -296,10 +295,12 @@ public class MainSerializer : MonoBehaviour
             }
         }
 
-        public void HandleText(string text)
+        public void HandleText(string text, BinaryReader reader)
         {
-           //log chat message
-           networkManager.Log(text);
+            //log chat message
+            //networkManager.Log(text);
+            byte index = reader.ReadByte();
+            networkManager.gameManager.ReceiveChatMessage(text, index);
         }
 
         public void HandleCommand(CommandType type, BinaryReader reader)
@@ -318,10 +319,6 @@ public class MainSerializer : MonoBehaviour
                     networkManager.LoadGameScene(reader);
                    
                     break;
-                case CommandType.Host:
-                    networkManager.isHost = true;
-                    networkManager.Log("[SERVER] You are this server's Host.");
-                    break;
                 case CommandType.AddPlayer:
                     networkManager.usersList.Add(reader.ReadString());
                     break;
@@ -330,6 +327,7 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case CommandType.AssignID:
                     networkManager.userId = reader.ReadInt32();
+                    networkManager.SetPlayerColorIndex(reader.ReadByte());
                     networkManager.Log("[SERVER] Received unique user ID.");
                     break;
                 case CommandType.WinGame:
@@ -395,8 +393,9 @@ public class MainSerializer : MonoBehaviour
                     }
                     else
                     {
+                        byte index = reader.ReadByte();
                         // Si es texto normal, se envía al chat
-                        networkManager.ctpc.TCPSendChatMessage(TCPfrom, messageText);
+                        networkManager.ctpc.TCPSendChatMessage(TCPfrom, messageText, index);
                     }
                     break;
                 case MsgType.Command:
@@ -406,9 +405,6 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case MsgType.Input:
                     HandleInput(reader);
-                    break;
-                case MsgType.CubeRot:
-                    networkManager.cudp.UDPUpdateCube(reader.ReadSingle());
                     break;
                 case MsgType.BoardChange:
                     networkManager.UpdateBoard(reader);

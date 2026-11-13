@@ -46,12 +46,6 @@ public class Connection : MonoBehaviour
     readonly HashSet<int> m_warned = new HashSet<int>();
     volatile bool m_running;
 
-    //client host handling
-    bool host = false;
-    Socket hostSocket;
-
-    float velocityRotation = 0.5f;
-
 
     //State puzzle
     bool isPuzzleFinished = false;
@@ -65,7 +59,7 @@ public class Connection : MonoBehaviour
         Color.red,
         Color.blue,
         Color.green,
-        Color.yellow,
+        Color.orange,
         Color.magenta,
         Color.cyan
     };
@@ -233,8 +227,9 @@ public class Connection : MonoBehaviour
                 byte colorIndex = (byte)(nextColorIndex % playerColors.Count);
                 nextColorIndex++;
 
-                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one,/*0.0f, */colorIndex, playerColors[colorIndex]);
                 playerSpawnPos.x += playerSpawnXVar;
+
+                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one,/*0.0f, */colorIndex, playerColors[colorIndex]);
                 nextClientId++;
 
                 usersConnected.Add(client, clientPlayer);
@@ -261,6 +256,14 @@ public class Connection : MonoBehaviour
 
             ReceiveLoopUDP();
         }
+    }
+
+    public byte GetNextColorIndex()
+    {
+        byte colorIndex = (byte)(nextColorIndex % playerColors.Count);
+        nextColorIndex++;
+
+        return colorIndex;
     }
 
     void ReceiveLoopTCP(Socket socket)
@@ -340,16 +343,12 @@ public class Connection : MonoBehaviour
     {
         ReceiveLoopTCP(client);
 
-        bool noHost = false;
         string clientName = "";
         List<Socket> remainingClients = new List<Socket>();
         List<string> updatedClientList = new List<string>();
 
         lock (usersConnected)
         {
-            
-            
-
             // remove disconnected client from list
             if (usersConnected.TryGetValue(client, out PlayerInfo clientPlayer))
             {
@@ -361,30 +360,27 @@ public class Connection : MonoBehaviour
                 usersConnected.Remove(client);
             }
 
-                hostSocket = null;
-                host = false;
-
-                //if host is gone --> prepare list of clients to disconnect
-                remainingClients = new List<Socket>(usersConnected.Keys);
-                usersConnected.Clear();
-                connectionManager.playerInfoDic.Clear();
+            //if host is gone --> prepare list of clients to disconnect
+            remainingClients = new List<Socket>(usersConnected.Keys);
+            foreach (var player in connectionManager.playerInfoDic.Values)
+            {
+                if (!string.IsNullOrEmpty(player.playerName))
+                    updatedClientList.Add(player.playerName);
+            }
         }
 
         lock (m_clients)
         {
             m_clients.Remove(client);
-            if (noHost) m_clients.Clear();
         }
 
         Log("[SERVER] " + clientName + " disconnected. Closing room for all.");
 
-        
-            //kick everyone if host is gone
-            foreach (var otherClient in remainingClients) 
-            {
-                CloseSocket(otherClient);
-            }
-            
+        byte[] listPacket = serializer.SerializeUserList(updatedClientList);
+        foreach (var otherClient in remainingClients)
+        {
+            SendPacketTCP(listPacket, otherClient);
+        }
 
         CloseSocket(client);
     }
@@ -426,16 +422,19 @@ public class Connection : MonoBehaviour
         serializer.Deserialize(data, from);
     }
 
-    public void TCPSendChatMessage(Socket from, string text)
+    public void TCPSendChatMessage(Socket from, string text, byte index)
     {
-        string chatText = "[" + usersConnected[from].playerName + "]: " + text;
+        string chatText;
+        if (from != null) chatText = "[" + usersConnected[from].playerName + "]: " + text;
+        else chatText = "[" + connectionManager.hostUserName + "]: " + text;
 
         foreach (var user in usersConnected)
-        {
-            SendPacketTCP(serializer.SerializeText(chatText), user.Key);
-        }
+            {
+                SendPacketTCP(serializer.SerializeText(chatText, CommandType.None, index), user.Key);
+            }
 
-        Log(chatText);
+        connectionManager.gameManager.ReceiveChatMessage(chatText, index);
+        //Log(chatText);
     }
 
     public void TCPNewUser(Socket from, string name)
@@ -444,13 +443,18 @@ public class Connection : MonoBehaviour
         {
             usersConnected[from].playerName = name;
 
-            //send id to client and assign to id dictionary
+            //send id + color to client and assign to id dictionary
             int assignedId = usersConnected[from].id;
-            SendPacketTCP(serializer.SerializePlayerId(assignedId), from);
+            byte assignedColor = usersConnected[from].colorIndex;
+            SendPacketTCP(serializer.SerializePlayerId(assignedId, assignedColor), from);
             connectionManager.playerInfoDic[assignedId] = usersConnected[from];
 
             List<string> users = new List<string>(usersConnected.Count);
-            foreach (var player in usersConnected.Values) users.Add(player.playerName);
+            foreach (var player in connectionManager.playerInfoDic.Values)
+            {
+                if (!string.IsNullOrEmpty(player.playerName))
+                    users.Add(player.playerName);
+            }
 
             if (!isPuzzleFinished)
             {
@@ -469,14 +473,6 @@ public class Connection : MonoBehaviour
                 SendPacketTCP(serializer.SerializeTypes(false, CommandType.StartGame), from);
 
             }
-        }
-
-        if (!host)
-        {
-            //send host command to make user host
-            SendPacketTCP(serializer.SerializeTypes(false, CommandType.Host), from);
-            host = true;
-            hostSocket = from;
         }
     }
 
@@ -504,16 +500,6 @@ public class Connection : MonoBehaviour
         byte[] response = serializer.SerializeText(serverName, CommandType.ConnectedUDP);
         SendPacketUDP(response, from);
     }
-
-    public void UDPUpdateCube(float rot)
-    {
-        float rotation = rot + velocityRotation;
-        foreach (var user in m_knownClients)
-        {
-            SendPacketUDP(serializer.SerializeCubeRot(rotation), user);
-        }
-    }
-
     public void UDPSendToAllClients(byte[] packet)
     {
         foreach (var user in m_knownClients)

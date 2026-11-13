@@ -226,7 +226,7 @@ public class PipeControl : MonoBehaviour
 
                     if (xp == 0 && yp == 9 && (p.exit1 == 2 || p.exit2 == 2))
                     {
-                        if (networkManager.isHost) networkManager.UDPconnection.SendPacket(networkManager.serializer.SerializeText("Win"));
+                        //if (networkManager.isHost) networkManager.UDPconnection.SendPacket(networkManager.serializer.SerializeText("Win"));
                         stop = true;
                     }
                 }

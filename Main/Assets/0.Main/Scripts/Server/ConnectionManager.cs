@@ -10,9 +10,15 @@ using UnityEngine.UIElements;
 using UnityEngine.XR;
 using static MainSerializer;
 
-public class ConnectionManager : MonoBehaviour
+public class ConnectionManager : NetworkManager
 {
+    public static ConnectionManager Instance { get; private set; }
+
     [SerializeField] GameObject playerPrefab;
+
+    //host player info
+    public string hostUserName = "RoomHost";
+    public int hostPlayerId = 0;
 
     public bool UseNetworkSimulator = false;
 
@@ -83,6 +89,41 @@ public class ConnectionManager : MonoBehaviour
     public float doorOpening = 0.0f;
     private float StateTimer = 0.0f;
 
+    public override void InstantiateConnection(string name, string ip = null)
+    {
+        hostUserName = name;
+
+        //ensure there's only one instance
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
+        //set tpc connection type
+        ctpc.SetType(Connection.ConnectionType.TCP);
+        ctpc.SetPort(portTcp);
+
+        //set udp connection type
+        cudp.SetType(Connection.ConnectionType.UDP);
+        cudp.SetPort(portUdp);
+
+        //create serializer
+        serializer = new ServerSerializer(this);
+
+        doorState = DoorState.Closed;
+        doorOpening = 0.0f;
+
+        RegisterHostPlayer();
+
+        ParseCommandLine();
+
+        ctpc.StartNetwork();
+        cudp.StartNetwork();
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     private void Start()
     {
@@ -112,6 +153,88 @@ public class ConnectionManager : MonoBehaviour
 
         //create serializer
         serializer = new ServerSerializer(this);
+    }
+
+    public void RegisterHostPlayer()
+    {
+        if (playerInfoDic.ContainsKey(hostPlayerId)) return;
+
+        byte colorIndex = ctpc.GetNextColorIndex();
+
+        PlayerInfo hostPlayer = new PlayerInfo(
+        hostPlayerId,
+        hostUserName,
+        new Vector3(0f, 0f, 0f),
+        Vector3.zero,
+        Vector3.one,
+        colorIndex,
+        playerColors[colorIndex]
+        );
+
+        playerInfoDic[hostPlayerId] = hostPlayer;
+    }
+
+    public override List<String> GetUserList()
+    {
+        List<String> nameList = new List<string>();
+        foreach(var user in playerInfoDic.Values)
+        {
+            nameList.Add(user.playerName);
+        }
+        return nameList;
+    }
+
+    public override void StartGame()
+    {
+        if(cudp != null && cudp.IsRunning && !isPlaying)
+        {
+            cudp.UDPStartGame();
+        }
+    }
+
+    private void Update()
+    {
+        if (ctpc.IsRunning || cudp.IsRunning)
+        {
+            if (!isPlaying && Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                cudp.UDPStartGame();
+            }
+            if (isPlaying && Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                DebugWinGame();
+            }
+            if (isPlaying && Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                DebugLoseGame();
+            }
+        }
+    }
+
+    private void OnEnable()
+    {
+        Player.OnTileRotated += OnHostTileRotated;
+    }
+
+    private void OnDisable()
+    {
+        Player.OnTileRotated -= OnHostTileRotated;
+    }
+
+    void OnHostTileRotated(Pipe p)
+    {
+        // Only run if this instance is acting as the Server
+        if (!ctpc.IsRunning) return;
+
+        // Rotate the tile locally on the server's board
+        if (p.tileGO != null && p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+        {
+            tileScript.StartRotation(p);
+        }
+
+        // Broadcast the tile rotation to all connected TCP clients
+        byte[] tilePacket = serializer.SerializeTile(p);
+        ctpc.TCPSendToAllClients(tilePacket);
     }
 
     private void FixedUpdate()
@@ -229,7 +352,7 @@ public class ConnectionManager : MonoBehaviour
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
 
-        DontDestroyOnLoad(Camera.main);
+        //DontDestroyOnLoad(Camera.main);
 
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
 
@@ -267,14 +390,22 @@ public class ConnectionManager : MonoBehaviour
                 rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
             }
+            //check if is the host player
+            bool isLocalHost = (player.id == hostPlayerId);
+
+            //keep camera, input + script ENABLED for the host
             Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
-            if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
+            if (camaraRemota != null) camaraRemota.gameObject.SetActive(isLocalHost);
 
             PlayerInput playerInput = instancePlayer.GetComponent<PlayerInput>();
-            if (playerInput != null) playerInput.enabled = false;
+            if (playerInput != null) playerInput.enabled = isLocalHost;
 
             Player playerScript = instancePlayer.GetComponent<Player>();
-            if (playerScript != null) playerScript.enabled = false;
+            if (playerScript != null)
+            {
+                playerScript.enabled = isLocalHost;
+                if (isLocalHost) playerScript.SetPlayerColor(player.colorIndex);
+            }
 
             //add to dictionary
             spawnedPlayers[player.id] = instancePlayer;
@@ -327,28 +458,33 @@ public class ConnectionManager : MonoBehaviour
     }
     void OnGUI()
     {
-        GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-        GUILayout.Label("SERVER   name " + serverName);
+        //GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
+        //GUILayout.Label("SERVER   name " + serverName);
 
-        if (!ctpc.IsRunning && !cudp.IsRunning)
-        {
-            if (GUILayout.Button("Start server", GUILayout.Width(110)))
-            {
-                ctpc.StartNetwork();
-                cudp.StartNetwork();
-            }
-        }
-        else if (GUILayout.Button("Stop", GUILayout.Width(110)))
-        {
-            ctpc.Disconnect();
-            cudp.Disconnect();
-        }
+        //if (!ctpc.IsRunning && !cudp.IsRunning)
+        //{
+        //    if (GUILayout.Button("Start server", GUILayout.Width(110)))
+        //    {
+        //        ctpc.StartNetwork();
+        //        cudp.StartNetwork();
+        //    }
+        //}
+        //else if (GUILayout.Button("Stop", GUILayout.Width(110)))
+        //{
+        //    ctpc.Disconnect();
+        //    cudp.Disconnect();
+        //}
 
-        lock (m_log)
-            for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
-                GUILayout.Label(m_log[i]);
+        //lock (m_log)
+        //    for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
+        //        GUILayout.Label(m_log[i]);
 
-        GUILayout.EndArea();
+        //GUILayout.EndArea();
+    }
+
+    public override void SendChatMessage(string msg)
+    {
+        ctpc.TCPSendChatMessage(null, msg, playerInfoDic[hostPlayerId].colorIndex);
     }
     public void Log(string message)
     {
