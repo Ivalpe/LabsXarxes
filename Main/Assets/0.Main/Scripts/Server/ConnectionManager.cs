@@ -30,7 +30,7 @@ public class ConnectionManager : MonoBehaviour
         Color.red,
         Color.blue,
         Color.green,
-        Color.yellow,
+        Color.orange,
         Color.magenta,
         Color.cyan
     };
@@ -40,7 +40,7 @@ public class ConnectionManager : MonoBehaviour
         {Color.red, new Color(1f, 0.6f, 0.6f, 1f) },
         {Color.blue, new Color(0.4f, 1f, 1f, 1f)},
         {Color.green, new Color(0.6f, 1f, 0.5f, 1f) },
-        {Color.yellow, new Color(1f, 0.9f, 0.4f, 1f) },
+        {Color.orange, new Color(1f, 0.5f, 0.1f, 1f) },
         {Color.magenta, new Color(1f, 0.5f, 0.9f, 1.0f)},
         {Color.cyan, new Color(0.6f, 0.9f, 0.8f, 1f) }
     };
@@ -202,13 +202,13 @@ public class ConnectionManager : MonoBehaviour
                         doorOpening = 0.0f;
                         doorState = DoorState.Closed;
 
-                        SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
+                        //SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
 
-                        if (SomePlayerInTheRoom)
-                        {
-                            DebugLoseGame();
-                            return;
-                        }
+                        //if (SomePlayerInTheRoom)
+                        //{
+                        //    DebugLoseGame();
+                        //    return;
+                        //}
                     }
                     break;
                 case DoorState.Closed:

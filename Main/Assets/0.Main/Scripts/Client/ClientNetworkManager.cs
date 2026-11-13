@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 using static MainSerializer;
 
 
-public class ClientNetworkManager : MonoBehaviour
+public class ClientNetworkManager : NetworkManager
 {
     //static reference (for changing scenes)
     public static ClientNetworkManager Instance { get; private set; }
@@ -104,6 +104,37 @@ public class ClientNetworkManager : MonoBehaviour
 
     //on play --> stop full ui 
     bool isPlaying = false;
+
+    public ClientNetworkManager(string name, string ip)
+    {
+        userName = name;
+        serverIp = ip;
+
+        //ensure there's only one instance
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
+        //so object is not deleted when scene changes
+        DontDestroyOnLoad(gameObject);
+
+        //get tcp component
+        TCPconnection = GetComponent<ClientTCP>();
+
+        //get udp component
+        UDPconnection = GetComponent<ClientUDP>();
+
+        //create serializer
+        serializer = new ClientSerializer(this);
+
+        //start connection
+        TCPconnection.StartNetwork(serverIp, userName, TCPport);
+        UDPconnection.StartNetwork(serverIp, userName, UDPport);
+    }
 
     private void OnEnable()
     {
