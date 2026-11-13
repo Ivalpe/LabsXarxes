@@ -3,7 +3,6 @@ using UnityEngine;
 public class PlayerInput : MonoBehaviour
 {
     [SerializeField] private Transform cameraTransform;
-    ClientNetworkManager networkManager;
 
     //timer
     private float interval = 1f / 30f;
@@ -13,15 +12,8 @@ public class PlayerInput : MonoBehaviour
     //public Collider collider;
     public Rigidbody rb;
 
-    private void OnEnable()
-    {
-
-    }
-
     private void Start()
     {
-        //get network manager
-        networkManager = ClientNetworkManager.Instance;
         //collider = GetComponent<Collider>();
         rb = GetComponent<Rigidbody>();
     }
@@ -62,14 +54,25 @@ public class PlayerInput : MonoBehaviour
         if (cameraTransform != null) yawRotation = cameraTransform.eulerAngles.y;
         else yawRotation = transform.eulerAngles.y; //if no camera -> get transform to avoid errors
 
+        // if client
+        if (ClientNetworkManager.Instance != null)
+        {
+            byte[] packet = ClientNetworkManager.Instance.serializer.SerializePlayerInput(
+                ClientNetworkManager.Instance.userId, horizontal, vertical, yawRotation, sendJump
+            );
+            //via udp
+            ClientNetworkManager.Instance.UDPconnection.SendPacket(packet);
+        }
+        else if (ConnectionManager.Instance != null) // if server
+        {
+            var server = ConnectionManager.Instance;
+            if (server.playerInfoDic.TryGetValue(server.hostPlayerId, out PlayerInfo hostPlayer))
+            {
+                hostPlayer.SetInput(horizontal, vertical, yawRotation, sendJump);
+            }
+        }
 
-
-        //send by UDP
-        byte[] inputPacket = networkManager.serializer.SerializePlayerInput(networkManager.userId, horizontal, vertical, yawRotation, sendJump);
-        networkManager.UDPconnection.SendPacket(inputPacket);
         sendJump = false;
-        
+
     }
-
-
 }
