@@ -27,7 +27,6 @@ public class ReplicationManagerClient : MonoBehaviour
         // Read packet number and ignore old packets
         int sequence = reader.ReadInt32();
         if (sequence <= m_lastSequence) return;
-        m_lastSequence = sequence;
 
         // Read how many objects are in the packet
         int count = reader.ReadInt32();
@@ -57,13 +56,28 @@ public class ReplicationManagerClient : MonoBehaviour
             // If object is not on client yet, create it
             if (go == null)
             {
-                go = Instantiate(m_prefabs[type]);
-                go.GetComponent<NetObject>().id = id;
-                m_linking.Register(go, id);
+                if (type == 1)
+                {
+                    DoorController sceneDoor = FindAnyObjectByType<DoorController>();
+                    if (sceneDoor == null) return;
+                    go = sceneDoor.gameObject;
+                    sceneDoor.id = id;
+                    m_linking.Register(go, id);
+                }
+                else
+                {
+                    go = Instantiate(m_prefabs[type]);
+                    go.GetComponent<NetObject>().id = id;
+                    m_linking.Register(go, id);
+                }
+                    
             }
 
             // Read object position and data
             go.GetComponent<NetObject>().Read(reader);
         }
+
+        m_lastSequence = sequence;
+
     }
 }

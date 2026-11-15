@@ -345,7 +345,7 @@ public class ConnectionManager : NetworkManager
                     break;
             }
 
-            ////send world info to all users
+            //////send world info to all users
             //List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
             //byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
             //cudp.UDPSendToAllClients(worldPacket);
@@ -379,11 +379,16 @@ public class ConnectionManager : NetworkManager
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnServerPlayers;
 
+        doorOpening = 0.0f;
+        doorState = DoorState.Opening;
+
         DoorController door = FindAnyObjectByType<DoorController>();
         if (door != null)
         {
             door.id = linkingContext.Register(door.gameObject);
             door.type = 1;
+            replicationServer.MarkCreate(door.id);
+
         }
 
         List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);
@@ -429,7 +434,7 @@ public class ConnectionManager : NetworkManager
 
                 playerScript.id = linkingContext.Register(instancePlayer);
                 playerScript.type = 0;
-                playerScript.colorIndex=player.colorIndex;
+                playerScript.colorIndex = player.colorIndex;
                 playerScript.playerName = player.playerName;
                 replicationServer.MarkCreate(playerScript.id);
             }

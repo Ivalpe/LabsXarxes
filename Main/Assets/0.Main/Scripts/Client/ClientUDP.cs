@@ -35,7 +35,7 @@ public class ClientUDP : MonoBehaviour
 
     public bool IsRunning { get { return m_running; } }
 
-    void Start()
+    void Awake()
     {
         Application.runInBackground = true;
         networkManager = GetComponent<ClientNetworkManager>();

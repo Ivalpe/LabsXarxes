@@ -101,7 +101,7 @@ public class Connection : MonoBehaviour
             while (m_inboxUDP.TryDequeue(out packet))
                 OnPacketReceivedUDP(packet.data, packet.from);
 
-            if(netSim) netSim.Update();
+            if(netSim!=null) netSim.Update();
         }
 
         // Check for inactive clients

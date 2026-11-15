@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
 
-public class NetSimulator : MonoBehaviour
+public class NetSimulator
 {
     public float latency = 0.1f, jitter = 0.03f, dropChance = 0.02f;   // seconds, seconds, 0 to 1
 
