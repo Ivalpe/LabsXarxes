@@ -24,6 +24,9 @@ public class ConnectionManager : NetworkManager
 
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
 
+    //Replication Manager
+    public LinkingContext linkingContext = new LinkingContext(); //Store objects IDs
+    public ReplicationManagerServer replicationServer; // Builds words packet
 
     public float jumpStr = 1000f;
     public Connection ctpc;
@@ -153,6 +156,9 @@ public class ConnectionManager : NetworkManager
 
         //create serializer
         serializer = new ServerSerializer(this);
+
+        //create the replication manager
+        replicationServer = new ReplicationManagerServer(linkingContext);
     }
 
     public void RegisterHostPlayer()
@@ -344,6 +350,15 @@ public class ConnectionManager : NetworkManager
             byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
             cudp.UDPSendToAllClients(worldPacket);
 
+            // Mark all objects to update
+            foreach (int id in linkingContext.Ids)
+            {
+                replicationServer.MarkUpdate(id);
+            }
+            // Make the packet and send it by UDP
+            byte[] repPacket = replicationServer.WritePacket();
+            cudp.UDPSendToAllClients(repPacket);
+
         }
     }
 
@@ -409,6 +424,16 @@ public class ConnectionManager : NetworkManager
 
             //add to dictionary
             spawnedPlayers[player.id] = instancePlayer;
+
+            // Register player in the replication manager
+            NetObject netObj = instancePlayer.GetComponent<NetObject>();
+            if (netObj != null)
+            {
+                netObj.id = linkingContext.Register(instancePlayer);
+                netObj.type = 0; //0 is Player prefab
+                replicationServer.MarkCreate(netObj.id);
+            }
+
         }
 
 

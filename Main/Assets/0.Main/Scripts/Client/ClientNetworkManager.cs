@@ -72,6 +72,10 @@ public class ClientNetworkManager : NetworkManager
     public Dictionary<int, Vector3> playerTargetPosition = new Dictionary<int, Vector3>();
     public Dictionary<int, float> playerTargetRotation = new Dictionary<int, float>();
 
+    //Replication Manager
+    public LinkingContext linkingContext = new LinkingContext(); //Store objects IDs
+    public ReplicationManagerClient replicationClient; // reads words packet
+
     //ui components
     public string serverIp = "127.0.0.1";
     public int port = 9050;
@@ -160,6 +164,13 @@ public class ClientNetworkManager : NetworkManager
 
         //get udp component
         UDPconnection = GetComponent<ClientUDP>();
+
+        //Get replication component
+        replicationClient = GetComponent<ReplicationManagerClient>();
+        if (replicationClient != null)
+        {
+            replicationClient.Init(linkingContext); //Give it the IDs list
+        }
 
         //create serializer
         serializer = new ClientSerializer(this);

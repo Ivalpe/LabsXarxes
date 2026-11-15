@@ -19,7 +19,8 @@ public class MainSerializer : MonoBehaviour
         World = 5,
         CubeRot = 6,
         BoardState = 7,
-        BoardChange = 8
+        BoardChange = 8,
+        Replication = 9
     }
 
     //types of commands
@@ -288,6 +289,9 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case MsgType.BoardChange:
                     networkManager.OnBoardUpdate(reader);
+                    break;
+                case MsgType.Replication:
+                    networkManager.replicationClient.ReadPacket(reader);
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
