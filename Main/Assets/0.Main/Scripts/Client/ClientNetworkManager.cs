@@ -8,6 +8,12 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using static MainSerializer;
 
+public enum Prefabs : byte
+{
+    Player = 0,
+    StraightTile = 1,
+    CornerTile = 2,
+}
 
 public class ClientNetworkManager : NetworkManager
 {
@@ -20,6 +26,9 @@ public class ClientNetworkManager : NetworkManager
 
     //serializer
     public BaseSerializer serializer;
+    
+    //replication manager
+    public ReplicationManagerClient replManager;
 
     //connections for the manager to access
     public ClientTCP TCPconnection;
@@ -210,6 +219,8 @@ public class ClientNetworkManager : NetworkManager
                 }
             }
         }
+
+       
     }
 
     public void ManagePing()
@@ -232,7 +243,7 @@ public class ClientNetworkManager : NetworkManager
         {
             //get id
             int id = reader.ReadInt32();
-
+            int netId = reader.ReadInt32();
             //get position and turn to vector
             float x = reader.ReadSingle();
             float y = reader.ReadSingle();
@@ -240,9 +251,6 @@ public class ClientNetworkManager : NetworkManager
             Vector3 pos = new Vector3(x, y, z);
             //get rotation value
             float rotY = reader.ReadSingle();
-
-
-            //float yVel = reader.ReadSingle();
 
 
             if (spawnedPlayers.TryGetValue(id, out var player))
@@ -317,8 +325,7 @@ public class ClientNetworkManager : NetworkManager
                 p.tileGO = Instantiate(p.prefab, boardScript.gameObject.transform);
                 p.tileGO.transform.localPosition = p.boardPos;
                 p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
-                //p.tileGO.GetComponent<Renderer>().material.EnableKeyword("_EMISSION");
-                //p.tileGO.GetComponent<Renderer>().material.SetColor("_Emission", Color.black);
+
                 p.tileGO.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
 
                 if (p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
@@ -347,7 +354,7 @@ public class ClientNetworkManager : NetworkManager
         //has to be reassigned because the GO's info was filled on the server's boardScript, not this one.
     }
 
-    public void OnBoardUpdate(BinaryReader reader)
+    public void OnBoardUpdate(BinaryReader reader) //this is not called anymore
     {
         int xIndex = reader.ReadInt32(); 
         int yIndex = reader.ReadInt32(); 
@@ -488,6 +495,7 @@ public class ClientNetworkManager : NetworkManager
         for (int i = 0; i < count; i++)
         {
             int id = reader.ReadInt32();
+            int netId = reader.ReadInt32();
             string name = reader.ReadString();
             float x = reader.ReadSingle();
             float y = reader.ReadSingle();
@@ -495,11 +503,11 @@ public class ClientNetworkManager : NetworkManager
             Vector3 pos = new Vector3(x, y, z);
             float rotY = reader.ReadSingle();
             Vector3 rot = new Vector3(0, rotY, 0);
-            //float yVel = reader.ReadSingle();
+            
             byte colorIndex = reader.ReadByte();
 
 
-            PlayerInfo player = new PlayerInfo(id, name, pos, rot, /*yVel, */colorIndex);
+            PlayerInfo player = new PlayerInfo(id, netId, name, pos, rot, /*yVel, */colorIndex);
             playersToSpawn.Add(player);
         }
     }
@@ -532,6 +540,7 @@ public class ClientNetworkManager : NetworkManager
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnMultiplayerPlayers;
 
+        
         foreach (var player in playersToSpawn)
         {
             Quaternion rotation = Quaternion.Euler(player.rotation);

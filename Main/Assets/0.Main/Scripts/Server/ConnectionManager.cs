@@ -20,9 +20,12 @@ public class ConnectionManager : NetworkManager
     public string hostUserName = "RoomHost";
     public int hostPlayerId = 0;
 
+    public int hostNetId = 0;
+
     public bool UseNetworkSimulator = false;
 
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
+
 
 
     public float jumpStr = 1000f;
@@ -51,8 +54,20 @@ public class ConnectionManager : NetworkManager
         {Color.cyan, new Color(0.6f, 0.9f, 0.8f, 1f) }
     };
 
+
+    public static Dictionary<netColor, Color> netTileColors = new Dictionary<netColor, Color>
+    {
+        {netColor.red, new Color(1f, 0.6f, 0.6f, 1f) },
+        {netColor.blue, new Color(0.4f, 1f, 1f, 1f)},
+        {netColor.green, new Color(0.6f, 1f, 0.5f, 1f) },
+        {netColor.orange, new Color(1f, 0.5f, 0.1f, 1f) },
+        {netColor.magenta, new Color(1f, 0.5f, 0.9f, 1.0f)},
+        {netColor.cyan, new Color(0.6f, 0.9f, 0.8f, 1f) }
+    };
+
     //serializer
     public BaseSerializer serializer;
+    public ReplicationManagerServer replManager;
 
     public int portTcp = 9050;
     public int portUdp = 9051;
@@ -65,6 +80,7 @@ public class ConnectionManager : NetworkManager
     //gameplay variables
     public bool isPlaying = false;
     public Dictionary<int, PlayerInfo> playerInfoDic = new Dictionary<int, PlayerInfo>();
+    public LinkingContext m_linking = new LinkingContext();
     public float speed = 5;
     public float gravityScale = 1;
     public float maxJumpHeight = 3;
@@ -113,8 +129,13 @@ public class ConnectionManager : NetworkManager
         //create serializer
         serializer = new ServerSerializer(this);
 
+        //create replication manager
+        replManager = new ReplicationManagerServer(m_linking);
+
         doorState = DoorState.Closed;
         doorOpening = 0.0f;
+
+        
 
         RegisterHostPlayer();
 
@@ -158,17 +179,21 @@ public class ConnectionManager : NetworkManager
     public void RegisterHostPlayer()
     {
         if (playerInfoDic.ContainsKey(hostPlayerId)) return;
+        if (playerInfoDic.ContainsKey(hostNetId)) return;
 
         byte colorIndex = ctpc.GetNextColorIndex();
 
+        
+
         PlayerInfo hostPlayer = new PlayerInfo(
-        hostPlayerId,
-        hostUserName,
-        new Vector3(0f, 0f, 0f),
-        Vector3.zero,
-        Vector3.one,
-        colorIndex,
-        playerColors[colorIndex]
+            hostPlayerId,
+            hostNetId, // will write 0 until linking context replaces it
+            hostUserName,
+            new Vector3(0f, 0f, 0f),
+            Vector3.zero,
+            Vector3.one,
+            colorIndex,
+            playerColors[colorIndex]
         );
 
         playerInfoDic[hostPlayerId] = hostPlayer;
@@ -229,7 +254,7 @@ public class ConnectionManager : NetworkManager
         // Rotate the tile locally on the server's board
         if (p.tileGO != null && p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p);
+            tileScript.StartRotation(p, replManager);
         }
 
         // Broadcast the tile rotation to all connected TCP clients
@@ -247,13 +272,18 @@ public class ConnectionManager : NetworkManager
              
             //update for each player
             foreach(var entry in playerInfoDic)
-            {                
+            {
+
+
                 PlayerInfo player = entry.Value;
                 if (player == null) continue;
 
+                replManager.MarkUpdate(player.netID);
+
                 if (!spawnedPlayers.TryGetValue(player.id, out GameObject playerObj) || playerObj == null) continue;
                 if (!playerObj.TryGetComponent(out Rigidbody rb)) continue;
-                
+
+
                 bool isGrounded = IsGrounded(playerObj);
 
                 //calculate move direction
@@ -290,7 +320,7 @@ public class ConnectionManager : NetworkManager
 
                 //Debug.Log($"rb.position.y = {rb.position.y}, isGrounded? = {isGrounded}, player.yVelocity = {player.yVelocity} ");
                
-               
+                
                
             }
             switch (doorState)
@@ -341,8 +371,11 @@ public class ConnectionManager : NetworkManager
 
             //send world info to all users
             List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
-            byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
+            //byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
+            byte[] worldPacket = serializer.SerializeWorldState(replManager);
             cudp.UDPSendToAllClients(worldPacket);
+
+            
 
         }
     }
@@ -364,11 +397,14 @@ public class ConnectionManager : NetworkManager
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnServerPlayers;
 
+        
 
         List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);
 
+
         foreach (var player in playersToSpawn)
         {
+            replManager.MarkCreate(player.netID); 
             Quaternion rotation = Quaternion.Euler(player.rotation);
             GameObject instancePlayer = Instantiate(playerPrefab, player.position, rotation);
 
@@ -407,6 +443,7 @@ public class ConnectionManager : NetworkManager
                 if (isLocalHost) playerScript.SetPlayerColor(player.colorIndex);
             }
 
+            NetPlayer netPlayer = instancePlayer.GetComponent<NetPlayer>();
             //add to dictionary
             spawnedPlayers[player.id] = instancePlayer;
         }
@@ -530,10 +567,15 @@ public class ConnectionManager : NetworkManager
         {
             for (int j = 0; j < pipeMap.GetLength(1); ++j)
             {
+
+                
                 Pipe p = pipeMap[i, j];
+                
                 p.tileGO = Instantiate(p.prefab, parent.gameObject.transform);
                 p.tileGO.transform.localPosition = p.boardPos;
                 p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
+
+                
 
                 //color hasn't been assigned in PipeControl, doing so now:
                 if (playerColors.Length != 0)
@@ -542,18 +584,14 @@ public class ConnectionManager : NetworkManager
                     if (playerTileColorPairs.ContainsKey(playerColors[r]))
                     {
                         p.tileColor = playerTileColorPairs[playerColors[r]];
+                        
                     }
                     else
                     {
                         p.tileColor = playerColors[r];
                     }
 
-
-
                     p.tileGO.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
-                    //p.tileGO.GetComponent<Renderer>().material.EnableKeyword("_EMISSION");
-                    //p.tileGO.GetComponent<Renderer>().material.SetColor("_Emission", Color.black);
-
 
                 }
                 else p.tileColor = Color.white; //last resort ig;
@@ -573,7 +611,23 @@ public class ConnectionManager : NetworkManager
                         }
                         
                     }
+
+
+                    if (p.tileGO.TryGetComponent<NetTile>(out NetTile netTileScript))
+                    {
+                        netTileScript.id = m_linking.Register(p.tileGO);
+                        
+                        //netTileScript.type = p.prefab; --> SET IN INSPECTOR
+                        netTileScript.boardX = tileScript.xIndex;
+                        netTileScript.boardY = tileScript.yIndex;
+                        netTileScript.rotIndex = p.rotIndex;
+                        netTileScript.color = (byte)GetNetTileColor(tileScript.mat.color);
+                          
+                        //replManager.MarkCreate(netTileScript.id); [WIP]
+
+                    }
                 }
+
 
             }
         }
@@ -619,6 +673,22 @@ public class ConnectionManager : NetworkManager
         return playerColors;
     }
 
+    public netColor GetNetTileColor(Color givenColor)
+    {
+        netColor netTileColor = netColor.red;
+        if (netTileColors.ContainsValue(givenColor))
+        {
+            foreach(var colorPair in netTileColors)
+            {
+                if (givenColor == colorPair.Value)
+                {
+                    netTileColor = colorPair.Key;
+                }
+            }
+        }
+        return netTileColor;
+    }
+
     public void UpdateBoard(BinaryReader reader)
     {
 
@@ -633,12 +703,12 @@ public class ConnectionManager : NetworkManager
 
         if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p);
+            tileScript.StartRotation(p, replManager); //message is sent when rotation finishes!!
         }
 
-        byte[] tilePacket = serializer.SerializeTile(p);
+        //byte[] tilePacket = serializer.SerializeTile(p);
         
-        ctpc.TCPSendToAllClients(tilePacket);
+        //ctpc.TCPSendToAllClients(tilePacket);
     }
 
 

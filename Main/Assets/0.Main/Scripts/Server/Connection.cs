@@ -19,6 +19,8 @@ public class Connection : MonoBehaviour
     ConnectionManager connectionManager;
     BaseSerializer serializer;
 
+    ReplicationManagerServer replManager;
+
     NetSimulator netSim;
 
     public int port;
@@ -140,6 +142,8 @@ public class Connection : MonoBehaviour
 
         connectionManager = GetComponent<ConnectionManager>();
         serializer = connectionManager.serializer;
+        replManager = GetComponent<ReplicationManagerServer>();
+       
 
         if(connectionType == ConnectionType.UDP) netSim = new NetSimulator(socket);
     }
@@ -229,7 +233,8 @@ public class Connection : MonoBehaviour
 
                 playerSpawnPos.x += playerSpawnXVar;
 
-                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, "", playerSpawnPos, Vector3.zero, Vector3.one,/*0.0f, */colorIndex, playerColors[colorIndex]);
+                //net id will be initialized to 0 until the gameobject is spawned
+                PlayerInfo clientPlayer = new PlayerInfo(nextClientId, 0, "", playerSpawnPos, Vector3.zero, Vector3.one,/*0.0f, */colorIndex, playerColors[colorIndex]);
                 nextClientId++;
 
                 usersConnected.Add(client, clientPlayer);
@@ -496,6 +501,8 @@ public class Connection : MonoBehaviour
         {
             Log("[SERVER] New UDP client: " + from);
         }
+
+        
 
         byte[] response = serializer.SerializeText(serverName, CommandType.ConnectedUDP);
         SendPacketUDP(response, from);

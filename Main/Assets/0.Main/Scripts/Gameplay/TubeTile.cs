@@ -18,6 +18,8 @@ public class TubeTile : MonoBehaviour
 
     public Color tileColor;
     public Material mat;
+
+    private NetTile netScript;
     void Start()
     {
 
@@ -26,6 +28,8 @@ public class TubeTile : MonoBehaviour
         mat.SetColor("_EmissionColor", Color.black);
 
         pipeControl = GetComponentInParent<PipeControl>();
+
+        netScript = GetComponent<NetTile>();
 
         //tileColor = mat.GetColor("_Color"); --> gets initiated with prefab color
     }
@@ -50,7 +54,7 @@ public class TubeTile : MonoBehaviour
         
     }
 
-    public void StartRotation(Pipe p)
+    public void StartRotation(Pipe p, ReplicationManagerServer replManager = null)
     {
         if (!rotating)
         {
@@ -59,13 +63,13 @@ public class TubeTile : MonoBehaviour
             if (p.exit2 > 4) p.exit2 -= 4;
 
             Quaternion targetRot = Quaternion.Euler(new Vector3(0,0, p.rotIndex * 90f));
-            StartCoroutine(Rotate(p, targetRot));
+            StartCoroutine(Rotate(p, targetRot, replManager));
         }
         
     }
 
     //Rotation for the tiles in the board
-    IEnumerator Rotate(Pipe p, Quaternion targetRot)
+    IEnumerator Rotate(Pipe p, Quaternion targetRot, ReplicationManagerServer replManager = null)
     {
         
         while (elapsedTime <= turnDuration)
@@ -84,7 +88,14 @@ public class TubeTile : MonoBehaviour
         p.exit2++;
 
         elapsedTime = 0;
+
+        if(replManager != null) //will only markupdate if StartRotation is called from the server
+        {
+            GetComponent<NetTile>().rotIndex = p.rotIndex;
+            replManager.MarkUpdate(GetComponent<NetTile>().id);
+        }
         
+
         pipeControl.VictoryCheck();
     }
 

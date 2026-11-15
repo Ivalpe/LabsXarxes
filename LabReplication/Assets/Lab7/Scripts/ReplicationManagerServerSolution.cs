@@ -18,11 +18,7 @@ namespace Lab7
 {
     public class ReplicationManagerServerSolution
     {
-        readonly Lab7LinkingContext m_linking;
-        readonly Dictionary<int, ReplicationAction> m_pending = new Dictionary<int, ReplicationAction>();
-        readonly Dictionary<int, (ReplicationAction action, float until)> m_repeat =
-            new Dictionary<int, (ReplicationAction, float)>();
-        int m_sequence;
+
 
         // The time in seconds, Time.time on slide 15. The test scene replaces it to replay exact
         // situations (a lost Create, a lost Destroy). In your game, leave it as it is.

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using UnityEngine;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
+using Unity.VisualScripting;
+using UnityEditor.Rendering;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 public class MainSerializer : MonoBehaviour
 {
@@ -19,7 +22,8 @@ public class MainSerializer : MonoBehaviour
         World = 5,
         CubeRot = 6,
         BoardState = 7,
-        BoardChange = 8
+        BoardChange = 8,
+        Replication = 9
     }
 
     //types of commands
@@ -253,6 +257,16 @@ public class MainSerializer : MonoBehaviour
             return data;
         }
 
+        public byte[] SerializeWorldState(ReplicationManagerServer replManager)
+        {
+            MemoryStream stream = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            replManager.WritePacket();
+
+            return stream.ToArray();
+        }
+
         //DESERIALIZER 
         public abstract void Deserialize(byte[] data, Socket TCPfrom = null, EndPoint UDPfrom = null);
     }
@@ -288,6 +302,10 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case MsgType.BoardChange:
                     networkManager.OnBoardUpdate(reader);
+                    
+                    break;
+                case MsgType.Replication:
+                    networkManager.replManager.ReadPacket(reader);
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
@@ -406,8 +424,8 @@ public class MainSerializer : MonoBehaviour
                 case MsgType.Input:
                     HandleInput(reader);
                     break;
-                case MsgType.BoardChange:
-                    networkManager.UpdateBoard(reader);
+                case MsgType.BoardChange: //this message shouldn't be sent anymore, replication handles it
+                    //networkManager.UpdateBoard(reader);
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");

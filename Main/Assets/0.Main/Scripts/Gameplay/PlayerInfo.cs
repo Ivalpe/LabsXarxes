@@ -7,6 +7,8 @@ using UnityEngine;
 public class PlayerInfo
 {
     public int id;
+
+    public int netID;
     public Vector3 position;
     public Vector3 rotation;
     public Vector3 scale;
@@ -26,6 +28,7 @@ public class PlayerInfo
     public PlayerInfo()
     {
         id = 0;
+        netID = 0;
         position = Vector3.zero;
         rotation = Vector3.zero;
         scale = Vector3.one;
@@ -35,9 +38,10 @@ public class PlayerInfo
         input = new PlayerMoveInput();
     }
 
-    public PlayerInfo(int i, string name, Vector3 pos, Vector3 rot, Vector3 sc,/* float yVel,*/ byte index, UnityEngine.Color m_color)
+    public PlayerInfo(int i, int netI, string name, Vector3 pos, Vector3 rot, Vector3 sc,/* float yVel,*/ byte index, UnityEngine.Color m_color)
     {
-        id = i; 
+        id = i;
+        netID = netI;
         playerName = name;
         position = pos;
         rotation = rot;
@@ -51,6 +55,7 @@ public class PlayerInfo
     public PlayerInfo(PlayerInfo p) //copy constructor
     {
         id = p.id;
+        netID = p.netID;
         playerName = p.playerName;
         position = p.position;
         rotation = p.rotation;
@@ -62,9 +67,10 @@ public class PlayerInfo
     }
 
     //for client start game player spawning
-    public PlayerInfo(int i, string name, Vector3 pos, Vector3 rot,/* float yVel, */byte index)
+    public PlayerInfo(int i, int netI, string name, Vector3 pos, Vector3 rot,byte index)
     {
         id = i;
+        netID = netI;
         playerName = name;
         position = pos;
         rotation = rot;
@@ -72,7 +78,7 @@ public class PlayerInfo
         colorIndex = index;
     }
 
-    public void SetInput(float hor, float vet, float yaw, bool jump/*, bool grounded*/)
+    public void SetInput(float hor, float vet, float yaw, bool jump)
     {
         input.horizontal = hor;
         input.vertical = vet;

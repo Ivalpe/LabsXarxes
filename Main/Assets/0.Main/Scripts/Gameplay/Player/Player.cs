@@ -1,9 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
-
-//using UnityEditor.ShaderGraph;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -16,7 +13,6 @@ public class Player : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public System.Action<Color> OnColorSet;
     public static System.Action<Pipe> OnTileRotated;
-    
     private readonly List<Color> playerColors = new List<Color>
     {
         Color.red,
@@ -26,9 +22,6 @@ public class Player : MonoBehaviour
         Color.magenta,
         Color.cyan
     };
-
-    
-    
 
     public Color tColor, pColor;
     bool nearBoard = false;
@@ -42,7 +35,7 @@ public class Player : MonoBehaviour
         boardScript = GameObject.FindAnyObjectByType<PipeControl>();
         //find the client network manager game object
         if (ClientNetworkManager.Instance != null) ClientNetworkManager.Instance.RegisterPlayerScript(this);
-
+        
     }
 
     public void SetPlayerColor(byte index)
@@ -53,7 +46,6 @@ public class Player : MonoBehaviour
         if (boardScript) 
             boardScript.activePlayerColors.Add(pColor);
 
-        
     }
 
     // Update is called once per frame
@@ -84,6 +76,7 @@ public class Player : MonoBehaviour
                             //if (tileScript) tileScript.StartRotation(boardScript.pipeMap[x, y]);
                             Pipe p = boardScript.pipeMap[x, y];
                             OnTileRotated?.Invoke(p);
+                            
                         }
                         //Debug.Log("Tapped" + hit.collider.gameObject.name);
                         if (tileScript) 
