@@ -122,6 +122,13 @@ public class ClientNetworkManager : NetworkManager
         //get udp component
         UDPconnection = GetComponent<ClientUDP>();
 
+        //get replication component and give it the IDs list
+        replicationClient = GetComponent<ReplicationManagerClient>();
+        if (replicationClient != null)
+        {
+            replicationClient.Init(linkingContext);
+        }
+
         //create serializer
         serializer = new ClientSerializer(this);
 
@@ -543,54 +550,61 @@ public class ClientNetworkManager : NetworkManager
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnMultiplayerPlayers;
 
-        foreach (var player in playersToSpawn)
+        DoorController door = FindAnyObjectByType<DoorController>();
+        if (door != null)
         {
-            Quaternion rotation = Quaternion.Euler(player.rotation);
-            GameObject instancePlayer = Instantiate(playerPrefab, player.position, rotation);
-
-            //Text name
-            TMPro.TextMeshProUGUI textNamePlayer = instancePlayer.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-            if (textNamePlayer != null) textNamePlayer.text = player.playerName;
-
-            //material color
-            var renderer = instancePlayer.GetComponentInChildren<Renderer>();
-            Color color = playerColors[player.colorIndex];
-            if(renderer != null) renderer.material.SetColor("_Color", color);
-            Rigidbody rb = instancePlayer.GetComponent<Rigidbody>();
-            if (rb)
-                rb.isKinematic = true; //otherwise you can't use rb.MovePosition or rb.MoveRotation
-
-            //check if the user is this client
-            if (player.id != userId)
-            {
-                Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
-                if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
-
-                PlayerInput playerInput = instancePlayer.GetComponent<PlayerInput>();
-                if (playerInput != null) playerInput.enabled = false;
-
-                Player playerScript = instancePlayer.GetComponent<Player>();
-                if (playerScript != null) playerScript.enabled = false;
-            }
-            else
-            {
-                //assign color to player script
-
-                playerColorIndex = player.colorIndex; //caching it to use in an action
-                if (instancePlayer.TryGetComponent(out Player localPlayerScript))
-                {
-                    localPlayerScript.SetPlayerColor(player.colorIndex);
-                }
-                //OnPlayerRegistered += SetClientPlayerColor;
-
-            }
-
-            //add to dictionary
-            spawnedPlayers[player.id] = instancePlayer;
+            door.id = 1;
+            linkingContext.Register(door.gameObject, 1);
         }
 
+        //foreach (var player in playersToSpawn)
+        //{
+        //    Quaternion rotation = Quaternion.Euler(player.rotation);
+        //    GameObject instancePlayer = Instantiate(playerPrefab, player.position, rotation);
+
+        //    //Text name
+        //    TMPro.TextMeshProUGUI textNamePlayer = instancePlayer.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+        //    if (textNamePlayer != null) textNamePlayer.text = player.playerName;
+
+        //    //material color
+        //    var renderer = instancePlayer.GetComponentInChildren<Renderer>();
+        //    Color color = playerColors[player.colorIndex];
+        //    if (renderer != null) renderer.material.SetColor("_Color", color);
+        //    Rigidbody rb = instancePlayer.GetComponent<Rigidbody>();
+        //    if (rb)
+        //        rb.isKinematic = true; //otherwise you can't use rb.MovePosition or rb.MoveRotation
+
+        //    //check if the user is this client
+        //    if (player.id != userId)
+        //    {
+        //        Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
+        //        if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
+
+        //        PlayerInput playerInput = instancePlayer.GetComponent<PlayerInput>();
+        //        if (playerInput != null) playerInput.enabled = false;
+
+        //        Player playerScript = instancePlayer.GetComponent<Player>();
+        //        if (playerScript != null) playerScript.enabled = false;
+        //    }
+        //    else
+        //    {
+        //        //assign color to player script
+
+        //        playerColorIndex = player.colorIndex; //caching it to use in an action
+        //        if (instancePlayer.TryGetComponent(out Player localPlayerScript))
+        //        {
+        //            localPlayerScript.SetPlayerColor(player.colorIndex);
+        //        }
+        //        //OnPlayerRegistered += SetClientPlayerColor;
+
+        //    }
+
+        //    //add to dictionary
+        //    spawnedPlayers[player.id] = instancePlayer;
+        //}
+
         OnAllPlayersSpawned?.Invoke();
-        
+
     }
 
     void SetClientPlayerColor(byte index)

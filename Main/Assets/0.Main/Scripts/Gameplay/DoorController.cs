@@ -1,7 +1,9 @@
 using UnityEngine;
 using TMPro;
+using System.IO;
 
-public class DoorController : MonoBehaviour
+
+public class DoorController : NetObject
 {
     [Header("Door Mesh Transforms")]
     public Transform door_left;
@@ -103,5 +105,30 @@ public class DoorController : MonoBehaviour
         
     }
 
-   
+    public override void Write(BinaryWriter w)
+    {
+        if (serverManager == null) serverManager = FindAnyObjectByType<ConnectionManager>();
+        if (serverManager != null)
+        {
+            w.Write(serverManager.doorOpening);
+            w.Write(serverManager.ClousingTimer);
+            w.Write((byte)serverManager.doorState);
+        }
+    }
+
+    public override void Read(BinaryReader r)
+    {
+        float opening = r.ReadSingle();
+        float timer = r.ReadSingle();
+        ConnectionManager.DoorState state = (ConnectionManager.DoorState)r.ReadByte();
+
+        if (ClientNetworkManager.Instance != null)
+        {
+            ClientNetworkManager.Instance.currentDoorOpening = opening;
+            ClientNetworkManager.Instance.currentClousingTimer = timer;
+            ClientNetworkManager.Instance.currentDoorState = state;
+        }
+    }
+
+
 }

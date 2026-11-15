@@ -345,10 +345,10 @@ public class ConnectionManager : NetworkManager
                     break;
             }
 
-            //send world info to all users
-            List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
-            byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
-            cudp.UDPSendToAllClients(worldPacket);
+            ////send world info to all users
+            //List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
+            //byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
+            //cudp.UDPSendToAllClients(worldPacket);
 
             // Mark all objects to update
             foreach (int id in linkingContext.Ids)
@@ -379,6 +379,12 @@ public class ConnectionManager : NetworkManager
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= SpawnServerPlayers;
 
+        DoorController door = FindAnyObjectByType<DoorController>();
+        if (door != null)
+        {
+            door.id = linkingContext.Register(door.gameObject);
+            door.type = 1;
+        }
 
         List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);
 
@@ -420,23 +426,17 @@ public class ConnectionManager : NetworkManager
             {
                 playerScript.enabled = isLocalHost;
                 if (isLocalHost) playerScript.SetPlayerColor(player.colorIndex);
+
+                playerScript.id = linkingContext.Register(instancePlayer);
+                playerScript.type = 0;
+                playerScript.colorIndex=player.colorIndex;
+                playerScript.playerName = player.playerName;
+                replicationServer.MarkCreate(playerScript.id);
             }
 
             //add to dictionary
             spawnedPlayers[player.id] = instancePlayer;
-
-            // Register player in the replication manager
-            NetObject netObj = instancePlayer.GetComponent<NetObject>();
-            if (netObj != null)
-            {
-                netObj.id = linkingContext.Register(instancePlayer);
-                netObj.type = 0; //0 is Player prefab
-                replicationServer.MarkCreate(netObj.id);
-            }
-
         }
-
-
 
     }
 
