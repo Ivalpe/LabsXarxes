@@ -1,14 +1,16 @@
-using UnityEngine;
+using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
-using NUnit.Framework;
-using Unity.VisualScripting;
+using System.IO;
 using System.Linq;
+using Unity.VisualScripting;
+using UnityEngine;
 
-public class TubeTile : MonoBehaviour
+public class TubeTile : NetObject
 { 
     bool rotating = false;
     public float turnDuration = 0.5f;
+
     float elapsedTime = 0;
     float emissionTimer = 0f;
 
@@ -18,16 +20,12 @@ public class TubeTile : MonoBehaviour
 
     public Color tileColor;
     public Material mat;
+    int rotIndex = 0;
     void Start()
     {
-
         mat = GetComponent<Renderer>().material;
-        
         mat.SetColor("_EmissionColor", Color.black);
-
         pipeControl = GetComponentInParent<PipeControl>();
-
-        //tileColor = mat.GetColor("_Color"); --> gets initiated with prefab color
     }
 
     //Emission to show what tile is being rotated 
@@ -44,28 +42,28 @@ public class TubeTile : MonoBehaviour
     {
 
         mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
-
-        
         mat.SetColor("_EmissionColor", Color.black);
         
     }
 
-    public void StartRotation(Pipe p)
+    public void StartRotation(Pipe p, ReplicationManagerServer replServer = null)
     {
         if (!rotating)
         {
+           
             if (p.rotIndex > 4) p.rotIndex -= 4;
             if (p.exit1 > 4) p.exit1 -= 4;
             if (p.exit2 > 4) p.exit2 -= 4;
 
-            Quaternion targetRot = Quaternion.Euler(new Vector3(0,0, p.rotIndex * 90f));
-            StartCoroutine(Rotate(p, targetRot));
+            rotIndex = p.rotIndex;
+            Quaternion targetRot = Quaternion.Euler(new Vector3(0,0, rotIndex * 90f));
+            StartCoroutine(Rotate(p, targetRot, replServer));
         }
         
     }
 
     //Rotation for the tiles in the board
-    IEnumerator Rotate(Pipe p, Quaternion targetRot)
+    IEnumerator Rotate(Pipe p, Quaternion targetRot, ReplicationManagerServer replServer = null)
     {
         
         while (elapsedTime <= turnDuration)
@@ -84,7 +82,12 @@ public class TubeTile : MonoBehaviour
         p.exit2++;
 
         elapsedTime = 0;
-        
+
+        rotIndex = p.rotIndex;
+
+        if (replServer != null)
+            replServer.MarkUpdate(id);
+
         pipeControl.VictoryCheck();
     }
 
@@ -95,6 +98,35 @@ public class TubeTile : MonoBehaviour
             if (mat.GetColor("_Color") == colorPair.Value) return colorPair.Key;
         }
         return Color.red;
+    }
+
+    public override void Write(BinaryWriter w)
+    { 
+        base.Write(w);
+
+        w.Write(xIndex);
+        w.Write(yIndex);
+
+        w.Write(tileColor.r);
+        w.Write(tileColor.g);
+        w.Write(tileColor.b);
+
+        w.Write(rotIndex);
+    }
+    public override void Read(BinaryReader r)
+    { 
+        base.Read(r);
+
+        xIndex = r.ReadInt32();
+        yIndex = r.ReadInt32();
+
+        tileColor.r = r.ReadSingle();
+        tileColor.b = r.ReadSingle();
+        tileColor.g = r.ReadSingle();
+        tileColor.a = 1.0f;
+
+        
+
     }
 
 }

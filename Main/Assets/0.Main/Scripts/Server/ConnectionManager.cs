@@ -655,20 +655,19 @@ public class ConnectionManager : NetworkManager
         int tileX = reader.ReadInt32();
         int tileY = reader.ReadInt32();
 
-        
         PipeControl boardScript = FindAnyObjectByType<PipeControl>();
         Pipe[,] pipeMap = boardScript.pipeMap;
 
-        Pipe p = pipeMap[tileX, tileY];
+        Pipe p = pipeMap[tileX, tileY]; //contains rotation inside
 
         if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p);
+            tileScript.StartRotation(p, replicationServer);
         }
 
-        byte[] tilePacket = serializer.SerializeTile(p);
+        //byte[] tilePacket = serializer.SerializeTile(p);
         
-        ctpc.TCPSendToAllClients(tilePacket);
+        //ctpc.TCPSendToAllClients(tilePacket);
     }
 
 
