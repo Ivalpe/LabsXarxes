@@ -368,34 +368,18 @@ public class ClientNetworkManager : NetworkManager
     public void OnBoardUpdate(BinaryReader reader)
     {
         int xIndex = reader.ReadInt32(); 
-        int yIndex = reader.ReadInt32(); 
-        
-
-        bool found = false;
-
-
-        for(int i = 0; i < pipeMap.GetLength(0); ++i) 
-        {
-            for(int j = 0; j < pipeMap.GetLength(1);  ++j)
-            {
-                if (i == xIndex && j == yIndex)
-                {
-                    found = true;
-                    break;
-                }
-                
-            }
-        }
-
-        if (found)
-        {
-            if(pipeMap[xIndex, yIndex].tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
-            {
-                tileScript.StartRotation(pipeMap[xIndex, yIndex]);
-            }
-        }
+        int yIndex = reader.ReadInt32();
 
         PipeControl boardScript = GameObject.FindAnyObjectByType<PipeControl>();
+
+        Pipe[,] pMap = boardScript.pipeMap;
+
+
+        if (pMap[xIndex, yIndex].tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+        {
+            tileScript.StartRotation(pipeMap[xIndex, yIndex]);
+        }
+
         if (boardScript) boardScript.pipeMap = pipeMap;
         else Debug.Log("BoardScript not found when updating board!");
     }
