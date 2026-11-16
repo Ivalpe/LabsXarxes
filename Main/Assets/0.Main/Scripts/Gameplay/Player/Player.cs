@@ -84,7 +84,7 @@ public class Player : NetObject
                         {
                             int x = tileScript.xIndex;
                             int y = tileScript.yIndex;
-                            //if (tileScript) tileScript.StartRotation(boardScript.pipeMap[x, y]);
+                            
                             Pipe p = boardScript.pipeMap[x, y];
                             OnTileRotated?.Invoke(p);
                         }
@@ -117,7 +117,8 @@ public class Player : NetObject
     {
         foreach(var p in boardScript.pipeMap)
         {
-            p.tileGO.GetComponent<TubeTile>().DisableEmission();
+            if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+                tileScript.DisableEmission();
         }
     }
 

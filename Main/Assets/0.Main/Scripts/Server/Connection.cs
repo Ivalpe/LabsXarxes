@@ -102,12 +102,15 @@ public class Connection : MonoBehaviour
                 OnPacketReceivedUDP(packet.data, packet.from);
 
             if (netSim != null)
-
+            {
                 if (Input.GetKeyDown(KeyCode.F1)) NetSimulator.SetBadConditions();
                 if (Input.GetKeyDown(KeyCode.F2)) NetSimulator.SetBaseConditions();
                 if (Input.GetKeyDown(KeyCode.F3)) NetSimulator.ToggleConditions();
 
-            netSim.Update();
+                netSim.Update();
+            }
+
+                
         }
 
         // Check for inactive clients

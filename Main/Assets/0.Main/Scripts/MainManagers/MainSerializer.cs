@@ -229,7 +229,7 @@ public class MainSerializer : MonoBehaviour
             return data;
         }
 
-        public byte[] SerializeTile(Pipe p)
+        public byte[] SerializeTile(Pipe p) //called by clients to tell server which tile to update
         {
             MemoryStream stream = new MemoryStream();
             BinaryWriter writer = new BinaryWriter(stream);
@@ -247,8 +247,8 @@ public class MainSerializer : MonoBehaviour
 
             writer.Write(x);
             writer.Write(y);
-            
-            
+
+
             byte[] data = stream.ToArray();
 
             return data;
@@ -287,9 +287,9 @@ public class MainSerializer : MonoBehaviour
                 case MsgType.BoardState:
                     networkManager.OnBoardCreated(reader);
                     break;
-                case MsgType.BoardChange:
-                    networkManager.OnBoardUpdate(reader);
-                    break;
+                //case MsgType.BoardChange: 
+                //    networkManager.OnBoardUpdate(reader);
+                //    break;
                 case MsgType.Replication:
                     networkManager.replicationClient.ReadPacket(reader);
                     break;
@@ -410,7 +410,7 @@ public class MainSerializer : MonoBehaviour
                 case MsgType.Input:
                     HandleInput(reader);
                     break;
-                case MsgType.BoardChange:
+                case MsgType.BoardChange: //stays because client tells server which tile to update
                     networkManager.UpdateBoard(reader);
                     break;
                 default:

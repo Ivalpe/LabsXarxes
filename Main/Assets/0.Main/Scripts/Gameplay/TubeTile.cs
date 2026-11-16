@@ -86,9 +86,12 @@ public class TubeTile : NetObject
         rotIndex = p.rotIndex;
 
         if (replServer != null)
+        {
+           
             replServer.MarkUpdate(id);
+            //pipeControl.VictoryCheck();
+        }
 
-        pipeControl.VictoryCheck();
     }
 
     public Color GetPlayerColor()
@@ -125,8 +128,13 @@ public class TubeTile : NetObject
         tileColor.g = r.ReadSingle();
         tileColor.a = 1.0f;
 
+        int newRotIndex = r.ReadInt32();
+        if(newRotIndex != rotIndex)
+        {
+            Pipe targetTile = pipeControl.pipeMap[xIndex, yIndex];
+            StartRotation(targetTile); //rotates on the client
+        }
         
-
     }
 
 }

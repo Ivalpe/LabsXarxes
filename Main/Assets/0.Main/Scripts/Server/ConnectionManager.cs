@@ -235,12 +235,12 @@ public class ConnectionManager : NetworkManager
         // Rotate the tile locally on the server's board
         if (p.tileGO != null && p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p);
+            tileScript.StartRotation(p, replicationServer); //rotates on server
         }
 
         // Broadcast the tile rotation to all connected TCP clients
-        byte[] tilePacket = serializer.SerializeTile(p);
-        ctpc.TCPSendToAllClients(tilePacket);
+        //byte[] tilePacket = serializer.SerializeTile(p);
+        //ctpc.TCPSendToAllClients(tilePacket);
     }
 
     private void FixedUpdate()
@@ -353,6 +353,7 @@ public class ConnectionManager : NetworkManager
             // Mark all objects to update
             foreach (int id in linkingContext.Ids)
             {
+                //if (linkingContext.Find(id).GetComponent<TubeTile>()) continue;
                 replicationServer.MarkUpdate(id);
             }
             // Make the packet and send it by UDP
@@ -562,6 +563,7 @@ public class ConnectionManager : NetworkManager
             {
                 Pipe p = pipeMap[i, j];
                 p.tileGO = Instantiate(p.prefab, parent.gameObject.transform);
+                
                 p.tileGO.transform.localPosition = p.boardPos;
                 p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
 
@@ -603,8 +605,11 @@ public class ConnectionManager : NetworkManager
                         }
                         
                     }
-                }
+                    tileScript.id = linkingContext.Register(p.tileGO); // REGISTER TILE
 
+                    replicationServer.MarkCreate(tileScript.id);
+                }
+               
             }
         }
 
@@ -615,6 +620,8 @@ public class ConnectionManager : NetworkManager
         }
         
         byte[] boardPacket = serializer.SerializeBoardState(pipeMap);
+
+       
 
         foreach(var user in ctpc.usersConnected)
         {
@@ -662,11 +669,12 @@ public class ConnectionManager : NetworkManager
 
         if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p, replicationServer);
+            tileScript.StartRotation(p, replicationServer); // changes rotIndex and calls MarkUpdate()
         }
 
-        //byte[] tilePacket = serializer.SerializeTile(p);
         
+
+        //byte[] tilePacket = serializer.SerializeTile(p);
         //ctpc.TCPSendToAllClients(tilePacket);
     }
 

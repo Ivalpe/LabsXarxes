@@ -70,8 +70,9 @@ public class ReplicationManagerClient : MonoBehaviour
                     go.GetComponent<NetObject>().id = id;
                     m_linking.Register(go, id);
                 }
-                    
+
             }
+
 
             // Read object position and data
             go.GetComponent<NetObject>().Read(reader);

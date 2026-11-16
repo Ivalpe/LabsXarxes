@@ -355,6 +355,8 @@ public class ClientNetworkManager : NetworkManager
                         }
 
                     }
+
+                    linkingContext.Register(p.tileGO, tileScript.id);
                 }
 
                 pipeMap[i, j] = p;
@@ -365,24 +367,24 @@ public class ClientNetworkManager : NetworkManager
         //has to be reassigned because the GO's info was filled on the server's boardScript, not this one.
     }
 
-    public void OnBoardUpdate(BinaryReader reader)
-    {
-        int xIndex = reader.ReadInt32(); 
-        int yIndex = reader.ReadInt32();
+    //public void OnBoardUpdate(BinaryReader reader) //this method shouldn't be called anymore (replication takes care of it)
+    //{
+    //    int xIndex = reader.ReadInt32(); 
+    //    int yIndex = reader.ReadInt32();
 
-        PipeControl boardScript = GameObject.FindAnyObjectByType<PipeControl>();
+    //    PipeControl boardScript = GameObject.FindAnyObjectByType<PipeControl>();
 
-        Pipe[,] pMap = boardScript.pipeMap;
+    //    Pipe[,] pMap = boardScript.pipeMap;
 
 
-        if (pMap[xIndex, yIndex].tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
-        {
-            tileScript.StartRotation(pipeMap[xIndex, yIndex]);
-        }
+    //    if (pMap[xIndex, yIndex].tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+    //    {
+    //        tileScript.StartRotation(pipeMap[xIndex, yIndex]); 
+    //    }
 
-        if (boardScript) boardScript.pipeMap = pipeMap;
-        else Debug.Log("BoardScript not found when updating board!");
-    }
+    //    //if (boardScript) boardScript.pipeMap = pipeMap;
+    //    //else Debug.Log("BoardScript not found when updating board!");
+    //}
 
     public void RegisterPlayerScript(Player comp)
     {

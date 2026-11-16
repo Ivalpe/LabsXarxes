@@ -172,6 +172,8 @@ public class PipeControl : MonoBehaviour
         if (connectionManager == null)
             connectionManager = GameObject.FindAnyObjectByType<ConnectionManager>();
 
+        //sentToServer = GameObject.FindGameObjectWithTag("TubeTile");
+
         if (connectionManager != null && !sentToServer)
         {
             connectionManager.CreateBoard(pipeMap, this.gameObject);
