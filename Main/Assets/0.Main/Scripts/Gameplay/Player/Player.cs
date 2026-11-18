@@ -33,6 +33,7 @@ public class Player : NetObject
     public Color tColor, pColor;
     bool nearBoard = false;
     TubeTile tileScript;
+    TubeTile prevTileScript;
     PipeControl boardScript;
 
     Material mat;
@@ -74,11 +75,12 @@ public class Player : NetObject
                 
                 if (hit.collider.CompareTag("TubeTile"))
                 {
-                  
+                    
+
                     tileScript = hit.collider.gameObject.GetComponent<TubeTile>();
                     
 
-                    if(pColor == tileScript.GetPlayerColor())
+                    if (pColor == tileScript.GetPlayerColor())
                     {
                         if (Pointer.current.press.wasPressedThisFrame)
                         {
@@ -88,9 +90,17 @@ public class Player : NetObject
                             Pipe p = boardScript.pipeMap[x, y];
                             OnTileRotated?.Invoke(p);
                         }
+
                         //Debug.Log("Tapped" + hit.collider.gameObject.name);
-                        if (tileScript) 
+                        if (tileScript)
+                        {
+                            if (prevTileScript)
+                                prevTileScript.DisableEmission();
+
                             tileScript.EnableEmission();
+                            prevTileScript = tileScript;
+                        } 
+
 
 
                         //StartCoroutine(RotateTile(hit.collider.gameObject, targetRot));
