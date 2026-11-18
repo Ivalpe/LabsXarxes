@@ -57,6 +57,7 @@ public class ClientNetworkManager : NetworkManager
         Color.cyan
     };
 
+
     //List for initial user spawning
     public List<PlayerInfo> playersToSpawn = new List<PlayerInfo>();
 

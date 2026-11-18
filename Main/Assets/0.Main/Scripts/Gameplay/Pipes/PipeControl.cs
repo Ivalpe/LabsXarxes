@@ -10,7 +10,7 @@ public class Pipe
     public Vector3 boardPos = Vector3.zero;
     public GameObject prefab = null;
 
-    public GameObject tileGO = new GameObject();
+    public GameObject tileGO = null;
 
 
     public Color tileColor = Color.white;

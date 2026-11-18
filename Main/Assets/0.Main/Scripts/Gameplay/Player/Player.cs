@@ -115,10 +115,18 @@ public class Player : NetObject
 
     void DisableAllTilesEmission()
     {
-        foreach(var p in boardScript.pipeMap)
+        //if (boardScript == null)
+        //    boardScript = GameObject.FindAnyObjectByType<PipeControl>();
+        
+
+        foreach (var p in boardScript.pipeMap)
         {
-            if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
-                tileScript.DisableEmission();
+            if(p.tileGO != null)
+            {
+                if (p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+                    tileScript.DisableEmission();
+            }
+            
         }
     }
 

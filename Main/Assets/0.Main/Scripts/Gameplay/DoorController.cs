@@ -121,7 +121,7 @@ public class DoorController : NetObject
         float opening = r.ReadSingle();
         float timer = r.ReadSingle();
         ConnectionManager.DoorState state = (ConnectionManager.DoorState)r.ReadByte();
-        Debug.Log($"[CLIENT DOOR] opening={opening}, state={state}");
+        //Debug.Log($"[CLIENT DOOR] opening={opening}, state={state}");
 
         if (ClientNetworkManager.Instance != null)
         {

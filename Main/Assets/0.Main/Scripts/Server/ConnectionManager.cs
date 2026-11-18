@@ -565,6 +565,7 @@ public class ConnectionManager : NetworkManager
                 p.tileGO = Instantiate(p.prefab, parent.gameObject.transform);
                 
                 p.tileGO.transform.localPosition = p.boardPos;
+                
                 p.tileGO.transform.localRotation = Quaternion.Euler(0f, 0f, p.rotIndex * 90f);
 
                 //color hasn't been assigned in PipeControl, doing so now:
@@ -595,6 +596,8 @@ public class ConnectionManager : NetworkManager
                     tileScript.xIndex = i;
                     tileScript.yIndex = j;
                     tileScript.tileColor = p.tileColor;
+                    tileScript.rotIndex = p.rotIndex;
+                    
 
                     if (tileScript.mat == null)
                     { 
@@ -606,10 +609,11 @@ public class ConnectionManager : NetworkManager
                         
                     }
                     tileScript.id = linkingContext.Register(p.tileGO); // REGISTER TILE
+                    replicationServer.MarkCreate(tileScript.id); // repeats entry for 1s so it ensures it is created
+                    //Objects are created only in ReadPacket, on a client, and only when m_linking.Find(id) returns nothing.
 
-                    replicationServer.MarkCreate(tileScript.id);
                 }
-               
+
             }
         }
 
@@ -617,16 +621,17 @@ public class ConnectionManager : NetworkManager
         if(parent.TryGetComponent<PipeControl>(out PipeControl boardScript))
         {
             boardScript.pipeMap = pipeMap;
+            
         }
         
-        byte[] boardPacket = serializer.SerializeBoardState(pipeMap);
+        //byte[] boardPacket = serializer.SerializeBoardState(pipeMap);
 
        
 
-        foreach(var user in ctpc.usersConnected)
-        {
-            ctpc.SendPacketTCP(boardPacket, user.Key);
-        }
+        //foreach(var user in ctpc.usersConnected)
+        //{
+        //    ctpc.SendPacketTCP(boardPacket, user.Key);
+        //}
         
     }
 
@@ -669,7 +674,7 @@ public class ConnectionManager : NetworkManager
 
         if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p, replicationServer); // changes rotIndex and calls MarkUpdate()
+            tileScript.StartRotation(p, replicationServer); // incremeents rotIndex and calls MarkUpdate()
         }
 
         

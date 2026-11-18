@@ -19,7 +19,8 @@ public class ReplicationManagerClient : MonoBehaviour
     public void Init(LinkingContext linking, List<GameObject> prefabs = null)
     {
         m_linking = linking;
-        if (prefabs != null) m_prefabs = prefabs;
+        if (prefabs != null) 
+            m_prefabs = prefabs;
     }
 
     public void ReadPacket(BinaryReader reader)
