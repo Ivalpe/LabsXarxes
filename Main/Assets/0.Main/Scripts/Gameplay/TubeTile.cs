@@ -23,18 +23,26 @@ public class TubeTile : NetObject
     public Material mat;
     public int rotIndex = 0;
 
-    public bool initialized = false;
+    AudioSource pipeSource;
+
+    AudioClip[] pipeRotSFX;
+    
+
+    bool initialized = false;
 
     void Awake()
     {
         //so Read isn't called before the material is initialized, cuz then this code would create a second material instance
         mat = GetComponent<Renderer>().material;
         mat.SetColor("_EmissionColor", Color.black);
+
+        pipeSource = GetComponent<AudioSource>();
     }
     void Start()
     {
         
         pipeControl = FindAnyObjectByType<PipeControl>();
+        pipeRotSFX = pipeControl.pipeRotSFX;
     }
 
     //Emission to show what tile is being rotated 
@@ -68,7 +76,9 @@ public class TubeTile : NetObject
             if (p.exit1 > 4) p.exit1 -= 4;
             if (p.exit2 > 4) p.exit2 -= 4;
 
-           
+            pipeSource.pitch = Random.Range(0.5f, 2.0f);
+            pipeSource.volume = Random.Range(0.5f, 1.0f);
+            pipeSource.PlayOneShot(pipeRotSFX[Random.Range(0, pipeRotSFX.Length)]);
 
             rotIndex = p.rotIndex; 
             Quaternion targetRot = Quaternion.Euler(new Vector3(0,0, rotIndex * 90f));
@@ -120,7 +130,7 @@ public class TubeTile : NetObject
         if (replServer != null)
         {
             replServer.MarkUpdate(id);
-            //pipeControl.VictoryCheck();
+            pipeControl.VictoryCheck();
         }
 
     }
@@ -192,6 +202,7 @@ public class TubeTile : NetObject
                 pipe.rotIndex = (newRotIndex + 3) % 4;
                 //server incremented rotindex already, so subtract 1 (-1 % 4 can return -1, use +3 % 4 instead) to stay at the newrotation in the client
                 StartRotation(pipe, null); 
+                
             }
         }
 

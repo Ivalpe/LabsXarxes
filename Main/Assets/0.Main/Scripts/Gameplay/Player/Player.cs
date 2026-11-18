@@ -27,9 +27,6 @@ public class Player : NetObject
         Color.cyan
     };
 
-    
-    
-
     public Color tColor, pColor;
     bool nearBoard = false;
     TubeTile tileScript;
@@ -100,11 +97,6 @@ public class Player : NetObject
                             tileScript.EnableEmission();
                             prevTileScript = tileScript;
                         } 
-
-
-
-                        //StartCoroutine(RotateTile(hit.collider.gameObject, targetRot));
-                        //transform.Rotate(90,0,0);
                     }
 
                 }
