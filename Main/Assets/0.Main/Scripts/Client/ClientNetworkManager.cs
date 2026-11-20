@@ -67,6 +67,8 @@ public class ClientNetworkManager : NetworkManager
     [Header("End Game Screens")]
     [SerializeField] private GameObject winScreenPanel;
     [SerializeField] private GameObject loseScreenPanel;
+    private bool gameOver = false;
+
 
     //Control all playersPrefabs
     public Dictionary<int, GameObject> spawnedPlayers = new Dictionary<int, GameObject>();
@@ -467,6 +469,15 @@ public class ClientNetworkManager : NetworkManager
     }
     public void LoadGameScene(BinaryReader reader)
     {
+        gameOver = false;
+
+        linkingContext = new LinkingContext();
+        if (replicationClient != null)
+        {
+            replicationClient.Init(linkingContext);
+        }
+
+
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
 
@@ -614,7 +625,10 @@ public class ClientNetworkManager : NetworkManager
     }
 
     public void ShowWinScreen()
-    { 
+    {
+        if (gameOver) return;
+        gameOver = true;
+
         if (winScreenPanel != null) winScreenPanel.SetActive(true);
         if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
         Log("[GAME] Has ganado la partida");
@@ -624,6 +638,9 @@ public class ClientNetworkManager : NetworkManager
     }    
     public void ShowLoseScreen()
     {
+        if (gameOver) return;
+        gameOver = true;
+
         if (winScreenPanel != null) winScreenPanel.SetActive(false);
         if (loseScreenPanel != null) loseScreenPanel.SetActive(true);
         Log("[GAME] Has perdido la partida");
@@ -638,17 +655,7 @@ public class ClientNetworkManager : NetworkManager
         //reset game state and disconnect screens
         if (winScreenPanel != null) winScreenPanel.SetActive(false);
         if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
-
-        if (TCPconnection.IsRunning) TCPconnection.Disconnect();
-        if (UDPconnection.IsRunning) UDPconnection.Disconnect();
-
-        //clear local data
-        isPlaying = false;
-
-        usersList.Clear();
-        playersToSpawn.Clear();
-        spawnedPlayers.Clear();
-
-        SceneManager.LoadScene("Client_WaitingRoom");
     }
+
+ 
 }

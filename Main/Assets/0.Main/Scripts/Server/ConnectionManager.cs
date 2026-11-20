@@ -28,6 +28,9 @@ public class ConnectionManager : NetworkManager
     public LinkingContext linkingContext = new LinkingContext(); //Store objects IDs
     public ReplicationManagerServer replicationServer; // Builds words packet
 
+    public byte gameOver = 0;
+    private bool isRestarting = false;
+
     public float jumpStr = 1000f;
     public Connection ctpc;
     public Connection cudp;
@@ -331,13 +334,16 @@ public class ConnectionManager : NetworkManager
                         doorOpening = 0.0f;
                         doorState = DoorState.Closed;
 
-                        //SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
+                        bool SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
 
-                        //if (SomePlayerInTheRoom)
-                        //{
-                        //    DebugLoseGame();
-                        //    return;
-                        //}
+                        if (SomePlayerInTheRoom)
+                        {
+                            DebugLoseGame();
+                        }
+                        else
+                        {
+                            DebugWinGame();
+                        }
                     }
                     break;
                 case DoorState.Closed:
@@ -368,8 +374,7 @@ public class ConnectionManager : NetworkManager
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
 
-        //DontDestroyOnLoad(Camera.main);
-
+        //DontDestroyOnLoad(Camera.main);c
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
 
         DebugNewGame();
@@ -390,6 +395,14 @@ public class ConnectionManager : NetworkManager
             door.type = 1;
             replicationServer.MarkCreate(door.id);
 
+        }
+
+        EndGameUI endGameUI = FindAnyObjectByType<EndGameUI>();
+        if (endGameUI != null)
+        {
+            endGameUI.id = linkingContext.Register(endGameUI.gameObject);
+            endGameUI.type = 4;
+            replicationServer.MarkCreate(endGameUI.id);
         }
 
         List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);
@@ -534,22 +547,43 @@ public class ConnectionManager : NetworkManager
 
     public void DebugWinGame()
     {
+        if (isRestarting) return;
+        isRestarting = true;
+
         doorState = DoorState.Closed;
         doorOpening = 0.0f;
+        gameOver = 1;
         Log("Win Game");
 
-        byte[] packet = serializer.SerializeTypes(false, CommandType.WinGame);
-        ctpc.TCPSendToAllClients(packet);
+        if (ClientNetworkManager.Instance != null)
+        {
+            ClientNetworkManager.Instance.ShowWinScreen();
+        }
+        StartCoroutine(RestartNewGameRoutine());
+
+        //byte[] packet = serializer.SerializeTypes(false, CommandType.WinGame);
+        //ctpc.TCPSendToAllClients(packet);
     }
 
     public void DebugLoseGame()
     {
+        if (isRestarting) return;
+        isRestarting = true;
+
         doorState = DoorState.Closed;
         doorOpening = 0.0f;
+        gameOver = 2;
         Log("Lose Game");
 
-        byte[] packet = serializer.SerializeTypes(false, CommandType.LoseGame);
-        ctpc.TCPSendToAllClients(packet);
+        //byte[] packet = serializer.SerializeTypes(false, CommandType.LoseGame);
+        //ctpc.TCPSendToAllClients(packet);
+
+        if(ClientNetworkManager.Instance != null)
+        {
+            ClientNetworkManager.Instance.ShowLoseScreen();
+        }
+        StartCoroutine(RestartNewGameRoutine());
+
     }
 
     public void CreateBoard(Pipe[,] pipeMap, GameObject parent)
@@ -683,5 +717,23 @@ public class ConnectionManager : NetworkManager
         //ctpc.TCPSendToAllClients(tilePacket);
     }
 
+    private IEnumerator RestartNewGameRoutine()
+    {
+        yield return new WaitForSeconds(5f);
+
+        //clean scene
+        linkingContext = new LinkingContext();
+        replicationServer = new ReplicationManagerServer(linkingContext);
+        spawnedPlayers.Clear();
+
+        gameOver = 0;
+        isRestarting = false;
+
+        //new secne
+        if (cudp != null && cudp.IsRunning)
+        {
+            cudp.UDPStartGame();
+        }
+    }
 
 }

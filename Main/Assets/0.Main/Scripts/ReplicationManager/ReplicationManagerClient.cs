@@ -65,6 +65,14 @@ public class ReplicationManagerClient : MonoBehaviour
                     sceneDoor.id = id;
                     m_linking.Register(go, id);
                 }
+                else if (type == 2)
+                {
+                    EndGameUI sceneUI = FindAnyObjectByType<EndGameUI>();
+                    if (sceneUI == null) return;
+                    go = sceneUI.gameObject;
+                    sceneUI.id = id;
+                    m_linking.Register(go, id);
+                }
                 else
                 {
                     go = Instantiate(m_prefabs[type]);
