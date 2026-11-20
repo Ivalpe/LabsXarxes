@@ -65,7 +65,7 @@ public class ReplicationManagerClient : MonoBehaviour
                     sceneDoor.id = id;
                     m_linking.Register(go, id);
                 }
-                else if (type == 2)
+                else if (type == 4)
                 {
                     EndGameUI sceneUI = FindAnyObjectByType<EndGameUI>();
                     if (sceneUI == null) return;
