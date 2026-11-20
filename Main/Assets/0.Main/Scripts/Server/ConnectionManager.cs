@@ -373,8 +373,8 @@ public class ConnectionManager : NetworkManager
     {
         //load the game scene
         SceneManager.LoadScene("Client_GameScene");
+        //DontDestroyOnLoad(Camera.main);
 
-        //DontDestroyOnLoad(Camera.main);c
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += SpawnServerPlayers; //call only when scene is loaded
 
         DebugNewGame();
@@ -397,12 +397,33 @@ public class ConnectionManager : NetworkManager
 
         }
 
+
         EndGameUI endGameUI = FindAnyObjectByType<EndGameUI>();
         if (endGameUI != null)
         {
             endGameUI.id = linkingContext.Register(endGameUI.gameObject);
             endGameUI.type = 4;
             replicationServer.MarkCreate(endGameUI.id);
+        }
+        
+        SpeechBubble[] speechBubbles = FindObjectsByType<SpeechBubble>(FindObjectsSortMode.None);
+        List<int> usedIndices = new List<int>();
+
+        foreach (var b in speechBubbles)
+        {
+            b.id = linkingContext.Register(b.gameObject);
+
+            int rand = 0;
+            do
+            {
+                rand = UnityEngine.Random.Range(0, b.catMemes.Length);
+            }
+            while (usedIndices.Contains(rand));
+
+            b.memeIndex = rand;
+            //b.SetCatMeme(b.memeIndex); //setting in server
+            usedIndices.Add(rand);
+            replicationServer.MarkUpdate(b.id);
         }
 
         List<PlayerInfo> playersToSpawn = new List<PlayerInfo>(playerInfoDic.Values);

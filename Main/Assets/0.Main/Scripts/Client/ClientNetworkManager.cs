@@ -555,6 +555,15 @@ public class ClientNetworkManager : NetworkManager
             linkingContext.Register(door.gameObject, 1);
         }
 
+        //SpeechBubble[] speechBubbles = FindObjectsByType<SpeechBubble>(FindObjectsSortMode.None);
+
+        //foreach (var b in speechBubbles)
+        //{
+            
+        //    //int id = b.gameObject.GetComponent<NetObject>().id;
+        //    linkingContext.Register(b.gameObject, b.id);
+        //}
+
         //foreach (var player in playersToSpawn)
         //{
         //    Quaternion rotation = Quaternion.Euler(player.rotation);

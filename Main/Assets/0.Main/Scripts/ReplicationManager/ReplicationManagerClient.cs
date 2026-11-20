@@ -73,6 +73,21 @@ public class ReplicationManagerClient : MonoBehaviour
                     sceneUI.id = id;
                     m_linking.Register(go, id);
                 }
+                else if (type == 5)
+                {
+                    SpeechBubble[] allBubbles = FindObjectsByType<SpeechBubble>(FindObjectsSortMode.None);
+                    foreach(var b in allBubbles)
+                    {
+                        if(b.id == 0) //id hasn't been assigned yet
+                        {
+                            b.id = id;
+                            go = b.gameObject;
+                            m_linking.Register(go, id);
+                            break;
+                        }
+                    }
+                   
+                }
                 else
                 {
                     go = Instantiate(m_prefabs[type]);
