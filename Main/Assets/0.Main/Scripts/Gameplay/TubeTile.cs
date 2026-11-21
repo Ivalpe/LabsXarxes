@@ -69,12 +69,11 @@ public class TubeTile : NetObject
         {
 
             p.rotIndex = (p.rotIndex + 1) % 4;
-            p.exit1++;
-            p.exit2++;
+            p.exit1--;
+            p.exit2--;
 
-           
-            if (p.exit1 > 4) p.exit1 -= 4;
-            if (p.exit2 > 4) p.exit2 -= 4;
+            if (p.exit1 < 1) p.exit1 += 4;
+            if (p.exit2 < 1) p.exit2 += 4;
 
             pipeSource.pitch = Random.Range(0.5f, 2.0f);
             pipeSource.volume = Random.Range(0.5f, 1.0f);

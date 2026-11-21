@@ -17,7 +17,7 @@ public class Pipe
 
     public int rotIndex = 0;
 
-   
+
 }
 
 public class PipeControl : MonoBehaviour
@@ -26,11 +26,12 @@ public class PipeControl : MonoBehaviour
     //Set up the pipes with the tiles and the colors needed
     public static PipeControl Instance { get; private set; }
     public GameObject cornerTile, straightTile;
+
     [Range(0,1)]
     [SerializeField] public float dropChance = 0.1f;
     [SerializeField] public float dropStrength = 2.0f;
     [SerializeField] public GameObject dropPrefab;
-    
+
 
     BoxCollider boardDetectArea;
     public List<Color> activePlayerColors = new List<Color>();
@@ -59,7 +60,7 @@ public class PipeControl : MonoBehaviour
         //get network manager
         networkManager = ClientNetworkManager.Instance;
 
-       
+
 
     }
 
@@ -125,12 +126,11 @@ public class PipeControl : MonoBehaviour
                 r = Random.Range(0, 4); //random rotation
 
                 p.rotIndex = r;
+                p.exit1 -= r;
+                p.exit2 -= r;
 
-                p.exit1 += r;
-                p.exit2 += r;
-
-                if (p.exit1 > 4) p.exit1 -= 4;
-                if (p.exit2 > 4) p.exit2 -= 4;
+                if (p.exit1 < 1) p.exit1 += 4;
+                if (p.exit2 < 1) p.exit2 += 4;
 
                 tileW = p.prefab.transform.localScale.x;
                 tileH = p.prefab.transform.localScale.y;
@@ -190,62 +190,38 @@ public class PipeControl : MonoBehaviour
     //Check for the right path or good conections to reach the end /STILL IN PROGRESS/
     public void VictoryCheck()
     {
-        int xp = 4, yp = 0;
+        if (connectionManager == null)
+            connectionManager = FindAnyObjectByType<ConnectionManager>();
+        if (connectionManager == null) return;
 
-        Pipe p;
+        int w = pipeMap.GetLength(0), h = pipeMap.GetLength(1);
+        int xp = 0, yp = h - 1;
+
         int dir = 2;
-        bool stop = false;
-        int pieza = 0;
 
-        while (!stop)
+        for (int steps = 0; steps < w * h; steps++)
         {
-            try
+            if (xp < 0 || xp >= w || yp < 0 || yp >= h) return;
+            Pipe p = pipeMap[xp, yp];
+            if (p == null) return;
+
+            int entry = dir + 2 > 4 ? dir - 2 : dir + 2;
+            if (p.exit1 != entry && p.exit2 != entry) return;
+
+            dir = (p.exit1 == entry) ? p.exit2 : p.exit1;
+
+            if (xp == w - 1 && yp == 0)
             {
-                Debug.Log("PRIMERA PIEZA: " + pipeMap[4,0].exit1 + " " + pipeMap[4,0].exit2);
-                p = pipeMap[xp, yp];
-
-
-                dir = dir + 2 > 4 ? dir - 2 : dir + 2;
-                if (p.exit1 == dir || p.exit2 == dir)
-                {
-                    if (p.exit1 == dir)
-                        dir = p.exit2;
-                    else if (p.exit2 == dir)
-                        dir = p.exit1;
-
-                    switch (dir)
-                    {
-                        case 1:
-                            yp += 1;
-                            break;
-                        case 2:
-                            xp += 1;
-                            break;
-                        case 3:
-                            yp -= 1;
-                            break;
-                        case 4:
-                            xp -= 1;
-                            break;
-
-
-                    }
-                    Debug.Log("PIEZAS BIEN COLOCADAS: " + pieza++);
-
-                    if (xp == 0 && yp == 9 && (p.exit1 == 2 || p.exit2 == 2))
-                    {
-                        /*if (networkManager.isHost) */
-                        networkManager.UDPconnection.SendPacket(networkManager.serializer.SerializeText("Win"));
-
-                        stop = true;
-                    }
-                }
-                else stop = true;
+                if (dir == 2) connectionManager.DebugWinGame();
+                return;
             }
-            catch (System.NullReferenceException n)
+
+            switch (dir)
             {
-                stop = true;
-                break;
+                case 1: yp += 1; break;
+                case 2: xp += 1; break;
+                case 3: yp -= 1; break;
+                case 4: xp -= 1; break;
             }
         }
     }
