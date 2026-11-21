@@ -77,6 +77,7 @@ public class ConnectionManager : NetworkManager
 
     Collider floorCollider;
 
+    PipeControl boardScript;
 
     //door variables
     public enum DoorState
@@ -240,6 +241,14 @@ public class ConnectionManager : NetworkManager
         {
             tileScript.StartRotation(p, replicationServer); //rotates on server
         }
+
+        if (!boardScript)
+        {
+            boardScript = FindAnyObjectByType<PipeControl>();
+        }
+
+        TryDropItem(boardScript, p.tileGO);
+
 
         // Broadcast the tile rotation to all connected TCP clients
         //byte[] tilePacket = serializer.SerializeTile(p);
@@ -722,17 +731,23 @@ public class ConnectionManager : NetworkManager
         int tileX = reader.ReadInt32();
         int tileY = reader.ReadInt32();
 
-        PipeControl boardScript = FindAnyObjectByType<PipeControl>();
+        
+        if (!boardScript)
+        {
+            boardScript = FindAnyObjectByType<PipeControl>();
+        }
+
+
         Pipe[,] pipeMap = boardScript.pipeMap;
 
         Pipe p = pipeMap[tileX, tileY]; //contains rotation inside
-
-        if(p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
+        
+        if (p.tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
         {
-            tileScript.StartRotation(p, replicationServer); // incremeents rotIndex and calls MarkUpdate()
+            tileScript.StartRotation(p, replicationServer); // increments rotIndex and calls MarkUpdate()
         }
 
-        
+        TryDropItem(boardScript, p.tileGO);
 
         //byte[] tilePacket = serializer.SerializeTile(p);
         //ctpc.TCPSendToAllClients(tilePacket);
@@ -757,4 +772,30 @@ public class ConnectionManager : NetworkManager
         }
     }
 
+
+    public void TryDropItem(PipeControl board, GameObject tileGO)
+    {
+
+        float rand = UnityEngine.Random.Range(0.0f, 1.0f);
+        Debug.Log("drop chance: " + rand + "/1.0");
+
+        if (rand < board.dropChance)
+        {
+            GameObject dropItem = Instantiate(board.dropPrefab, tileGO.transform.position, Quaternion.identity);
+            dropItem.transform.SetParent(null);
+            int dropID = linkingContext.Register(dropItem);
+
+            //Microchip chip = dropItem.GetComponent<Microchip>();
+            //chip.spawnDir = tileGO.transform.forward;
+            //chip.throwStr = boardScript.dropStrength;
+            
+            replicationServer.MarkCreate(dropID);
+            if (dropItem)
+            {
+                Rigidbody rb = dropItem.GetComponent<Rigidbody>();
+                if (rb)
+                    rb.AddForce(tileGO.transform.forward * board.dropStrength, ForceMode.Impulse);
+            }
+        }
+    }
 }

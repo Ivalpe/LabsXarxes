@@ -17,6 +17,9 @@ public class Player : NetObject
     public System.Action<Color> OnColorSet;
     public static System.Action<Pipe> OnTileRotated;
     
+
+    public float dropChance = 0.1f;
+    public GameObject dropPrefab;
     private readonly List<Color> playerColors = new List<Color>
     {
         Color.red,
@@ -85,7 +88,9 @@ public class Player : NetObject
                             int y = tileScript.yIndex;
                             
                             Pipe p = boardScript.pipeMap[x, y];
+                            
                             OnTileRotated?.Invoke(p);
+
                         }
 
                         //Debug.Log("Tapped" + hit.collider.gameObject.name);

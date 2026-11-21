@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static MainSerializer;
 
 public class ReplicationManagerClient : MonoBehaviour
@@ -88,6 +89,24 @@ public class ReplicationManagerClient : MonoBehaviour
                     }
                    
                 }
+                //else if (type == 6)
+                //{
+                //    Microchip[] allChips = FindObjectsByType<Microchip>(FindObjectsSortMode.None);
+                //    foreach(Microchip mc in allChips)
+                //    {
+                //        if(mc.id == 0)
+                //        {
+                //            mc.id = id;
+                //            go = mc.gameObject;
+                //            m_linking.Register(go, id);
+                //            //Microchip chip = go.GetComponent<Microchip>();
+                //            //chip.spawnDir = tileGO.transform.forward;
+                //            //chip.throwStr = boardScript.dropStrength;
+                //            break;
+
+                //        }
+                //    }
+                //}
                 else
                 {
                     go = Instantiate(m_prefabs[type]);

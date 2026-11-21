@@ -26,6 +26,10 @@ public class PipeControl : MonoBehaviour
     //Set up the pipes with the tiles and the colors needed
     public static PipeControl Instance { get; private set; }
     public GameObject cornerTile, straightTile;
+    [Range(0,1)]
+    [SerializeField] public float dropChance = 0.1f;
+    [SerializeField] public float dropStrength = 2.0f;
+    [SerializeField] public GameObject dropPrefab;
     
 
     BoxCollider boardDetectArea;
