@@ -16,8 +16,10 @@ public class Player : NetObject
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public System.Action<Color> OnColorSet;
     public static System.Action<Pipe> OnTileRotated;
-    
 
+
+    bool holdingChip = false;
+    Transform paw;
     public float dropChance = 0.1f;
     public GameObject dropPrefab;
     private readonly List<Color> playerColors = new List<Color>
@@ -35,6 +37,7 @@ public class Player : NetObject
     TubeTile tileScript;
     TubeTile prevTileScript;
     PipeControl boardScript;
+    ControlsDisplay ctrlDisplay;
 
     Material mat;
 
@@ -43,7 +46,8 @@ public class Player : NetObject
 
     void Start()
     {
-        boardScript = GameObject.FindAnyObjectByType<PipeControl>();
+        boardScript = FindAnyObjectByType<PipeControl>();
+        ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
         //find the client network manager game object
         if (ClientNetworkManager.Instance != null) ClientNetworkManager.Instance.RegisterPlayerScript(this);
 
@@ -63,7 +67,12 @@ public class Player : NetObject
     // Update is called once per frame
     void Update()
     {
-        
+
+        //if (canGrab && Input.GetKeyDown(KeyCode.E))
+        //{
+            
+        //}
+
         if (nearBoard)
         {
             Vector2 screenPos = Pointer.current.position.value;
@@ -144,6 +153,22 @@ public class Player : NetObject
             nearBoard = true;
             Debug.Log("Near board");
         }
+
+        
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.gameObject.GetComponent<Microchip>() && !holdingChip)
+        {
+            if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
+            else ctrlDisplay.ShowHoldUI("Grab");
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                gameObject.transform.SetParent(paw);
+                holdingChip = true;
+            }
+        }
     }
 
     private void OnTriggerExit(Collider other)
@@ -152,6 +177,12 @@ public class Player : NetObject
         {
             nearBoard = false;
             
+        }
+
+        if (other.gameObject.GetComponent<Microchip>())
+        {
+            if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
+            ctrlDisplay.HideHoldUI();
         }
     }
 

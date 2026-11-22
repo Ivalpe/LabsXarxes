@@ -1,3 +1,4 @@
+using System.Collections;
 using System.IO;
 using UnityEngine;
 
@@ -6,10 +7,14 @@ public class Microchip : NetObject
 
     [HideInInspector] public Vector3 spawnDir = Vector3.zero;
     [HideInInspector] public float throwStr = 0;
-    bool spawned = false;
+    Renderer renderer;
+    ConnectionManager connectionManager = ConnectionManager.Instance;
+    int maxFlickers = 10;
+    float blinkInterval = 1.0f;
     void Start()
     {
-        
+        renderer = GetComponentInChildren<Renderer>();
+        StartCoroutine(Flicker());
     }
 
     // Update is called once per frame
@@ -21,35 +26,11 @@ public class Microchip : NetObject
     public override void Write(BinaryWriter w)
     {
         base.Write(w);
-
-        //if (!spawned)
-        //{
-        //    w.Write(spawnDir.x);
-        //    w.Write(spawnDir.y);
-        //    w.Write(spawnDir.z);
-
-        //    w.Write(throwStr);
-            
-        //}
-
     }
 
     public override void Read(BinaryReader r)
     {
         base.Read(r);
-
-        //if (!spawned)
-        //{
-        //    spawnDir.x = r.ReadSingle();
-        //    spawnDir.y = r.ReadSingle();
-        //    spawnDir.z = r.ReadSingle();
-
-        //    throwStr = r.ReadSingle();
-
-        //    Vector3 throwDir = new Vector3(spawnDir.x, spawnDir.y, spawnDir.z);
-        //    ThrowMicrochip(throwDir, throwStr);
-        //    spawned = true;
-        //}
 
     }
 
@@ -61,11 +42,25 @@ public class Microchip : NetObject
        
     }
 
-    private void OnCollisionEnter(Collision collision)
+    IEnumerator Flicker()
     {
-        if (gameObject.GetComponent<Player>())
-        {
+        yield return new WaitForSeconds(5f);
 
+        for(int s = 1; s <= maxFlickers; s++)
+        {
+            renderer.enabled = false;
+            yield return new WaitForSeconds(blinkInterval);
+            renderer.enabled = true;
+            blinkInterval -= (s / 10.0f);
         }
+ 
+        
+        connectionManager.replicationServer.MarkDestroy(id);
+        connectionManager.linkingContext.Unregister(id);
+        Destroy(gameObject);
+        
     }
+
+
+
 }

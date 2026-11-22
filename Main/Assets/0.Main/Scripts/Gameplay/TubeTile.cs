@@ -129,7 +129,7 @@ public class TubeTile : NetObject
         if (replServer != null)
         {
             replServer.MarkUpdate(id);
-            //pipeControl.VictoryCheck();
+            pipeControl.VictoryCheck();
         }
 
     }
