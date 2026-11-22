@@ -24,6 +24,7 @@ public class DoorController : NetObject
 
     public TextMeshPro timer_text;
     private ConnectionManager serverManager;
+    public Light doorLight;
 
     void Start()
     {
@@ -34,7 +35,7 @@ public class DoorController : NetObject
             ClosedLeftPos = door_left.position;
             ClosedRightPos = door_right.position;
         }
-
+        doorLight=GetComponent<Light>();
     }
     //Slowly closes the door until its fully closed from the previously setted up pos
     void Update()
@@ -76,6 +77,7 @@ public class DoorController : NetObject
             {
                 door_right.position = ClosedRightPos;
             }
+            Flicker();
         }
         else
         {
@@ -154,5 +156,9 @@ public class DoorController : NetObject
         }
     }
 
+    private void Flicker()
+    {
+        doorLight.intensity = Random.Range(0f, 1.5f);
+    }
 
 }
