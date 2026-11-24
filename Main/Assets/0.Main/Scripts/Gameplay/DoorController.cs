@@ -35,7 +35,7 @@ public class DoorController : NetObject
             ClosedLeftPos = door_left.position;
             ClosedRightPos = door_right.position;
         }
-        doorLight=GetComponent<Light>();
+        //doorLight=GetComponent<Light>();
     }
     //Slowly closes the door until its fully closed from the previously setted up pos
     void Update()

@@ -1,10 +1,19 @@
-using UnityEngine;
 using System.IO;
+using Unity.VisualScripting;
+
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
+
 
 public class EndGameUI : NetObject
 {
     [SerializeField] private GameObject winPanel;
     [SerializeField] private GameObject losePanel;
+
+    //[SerializeField] private GameObject backToMenuBt;
+    //[SerializeField] private GameObject exitBt;
+
 
     private ConnectionManager serverManager;
 
@@ -21,6 +30,8 @@ public class EndGameUI : NetObject
         // Aseguramos que empiecen apagados
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
+
+
     }
 
     void Update()
@@ -67,5 +78,17 @@ public class EndGameUI : NetObject
                 ClientNetworkManager.Instance.ShowLoseScreen();
             }
         }
+    }
+
+    public void OnBackToMenuBtPressed()
+    {
+        
+        StartCoroutine(GetComponent<FadeManager>().Fade(0.0f, 1.0f, 1.0f, 0.0f, true, "MainMenu"));        
+    }
+
+
+    public void OnExitBtPressed()
+    {
+        Application.Quit();
     }
 }

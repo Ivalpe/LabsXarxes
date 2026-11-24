@@ -642,7 +642,7 @@ public class ClientNetworkManager : NetworkManager
         if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
         Log("[GAME] Has ganado la partida");
 
-        StartCoroutine(EndGameSec());
+        //tartCoroutine(EndGameSec());
 
     }    
     public void ShowLoseScreen()
@@ -654,7 +654,7 @@ public class ClientNetworkManager : NetworkManager
         if (loseScreenPanel != null) loseScreenPanel.SetActive(true);
         Log("[GAME] Has perdido la partida");
 
-        StartCoroutine(EndGameSec());
+        //StartCoroutine(EndGameSec());
     }
 
     System.Collections.IEnumerator EndGameSec()

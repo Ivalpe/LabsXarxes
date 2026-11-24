@@ -36,7 +36,7 @@ public class MainSerializer : MonoBehaviour
         AssignID = 7,
         WinGame = 8,
         LoseGame = 9,
-        PlayersDisconected = 10
+        PlayersDisconected = 10,
     }
 
 
@@ -293,6 +293,7 @@ public class MainSerializer : MonoBehaviour
                 case MsgType.Replication:
                     networkManager.replicationClient.ReadPacket(reader);
                     break;
+
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
                     break;

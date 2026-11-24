@@ -3,10 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VectorGraphics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 using UnityEngine.XR;
 using static MainSerializer;
 
@@ -15,6 +16,8 @@ public class ConnectionManager : NetworkManager
     public static ConnectionManager Instance { get; private set; }
 
     [SerializeField] GameObject playerPrefab;
+
+    //float fadeProgress = 0.0f;
 
     //host player info
     public string hostUserName = "RoomHost";
@@ -368,7 +371,7 @@ public class ConnectionManager : NetworkManager
             // Mark all objects to update
             foreach (int id in linkingContext.Ids)
             {
-                //if (linkingContext.Find(id).GetComponent<TubeTile>()) continue;
+                
                 replicationServer.MarkUpdate(id);
             }
             // Make the packet and send it by UDP
@@ -589,7 +592,9 @@ public class ConnectionManager : NetworkManager
         {
             ClientNetworkManager.Instance.ShowWinScreen();
         }
-        StartCoroutine(RestartNewGameRoutine());
+
+
+        //StartCoroutine(RestartNewGameRoutine());
 
         //byte[] packet = serializer.SerializeTypes(false, CommandType.WinGame);
         //ctpc.TCPSendToAllClients(packet);
@@ -612,7 +617,7 @@ public class ConnectionManager : NetworkManager
         {
             ClientNetworkManager.Instance.ShowLoseScreen();
         }
-        StartCoroutine(RestartNewGameRoutine());
+        //StartCoroutine(RestartNewGameRoutine());
 
     }
 
@@ -749,8 +754,6 @@ public class ConnectionManager : NetworkManager
 
         TryDropItem(boardScript, p.tileGO);
 
-        //byte[] tilePacket = serializer.SerializeTile(p);
-        //ctpc.TCPSendToAllClients(tilePacket);
     }
 
     private IEnumerator RestartNewGameRoutine()

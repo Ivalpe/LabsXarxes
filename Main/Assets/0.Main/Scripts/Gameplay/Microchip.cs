@@ -10,7 +10,8 @@ public class Microchip : NetObject
     Renderer renderer;
     ConnectionManager connectionManager = ConnectionManager.Instance;
     int maxFlickers = 10;
-    float blinkInterval = 1.0f;
+    float blinkInterval = 0.5f;
+    public bool grabbed = false;
     void Start()
     {
         renderer = GetComponentInChildren<Renderer>();
@@ -44,13 +45,24 @@ public class Microchip : NetObject
 
     IEnumerator Flicker()
     {
+        if (grabbed)
+        {
+            renderer.enabled = true;
+            Rigidbody rb = GetComponent<Rigidbody>();
+            rb.useGravity = false;
+            StopCoroutine(Flicker());
+            yield return null;
+        }
+ 
         yield return new WaitForSeconds(5f);
 
         for(int s = 1; s <= maxFlickers; s++)
         {
-            renderer.enabled = false;
+            //renderer.enabled = false;
+            renderer.gameObject.SetActive(false);
             yield return new WaitForSeconds(blinkInterval);
-            renderer.enabled = true;
+            renderer.gameObject.SetActive(true);
+            yield return new WaitForSeconds(blinkInterval);
             blinkInterval -= (s / 10.0f);
         }
  
@@ -58,6 +70,11 @@ public class Microchip : NetObject
         connectionManager.replicationServer.MarkDestroy(id);
         connectionManager.linkingContext.Unregister(id);
         Destroy(gameObject);
+
+        //ControlsDisplay ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
+        //ctrlDisplay.HideHoldUI();
+
+        
         
     }
 

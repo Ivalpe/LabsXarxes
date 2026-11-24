@@ -19,9 +19,9 @@ public class Player : NetObject
 
 
     bool holdingChip = false;
-    Transform paw;
+    public Transform paw;
     public float dropChance = 0.1f;
-    public GameObject dropPrefab;
+
     private readonly List<Color> playerColors = new List<Color>
     {
         Color.red,
@@ -70,13 +70,16 @@ public class Player : NetObject
 
         //if (canGrab && Input.GetKeyDown(KeyCode.E))
         //{
-            
+
         //}
+        Vector2 screenPos = Pointer.current.position.value;
+        Ray ray = Camera.main.ScreenPointToRay(screenPos);
+        paw.parent.SetPositionAndRotation(ray.origin + ray.direction.normalized, Quaternion.identity);
 
         if (nearBoard)
         {
-            Vector2 screenPos = Pointer.current.position.value;
-            Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            
+           
             Debug.DrawRay(ray.origin, ray.direction, Color.red);
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit))
@@ -161,12 +164,17 @@ public class Player : NetObject
     {
         if (other.gameObject.GetComponent<Microchip>() && !holdingChip)
         {
+            Microchip chip = other.gameObject.GetComponent<Microchip>();
             if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
             else ctrlDisplay.ShowHoldUI("Grab");
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKey(KeyCode.E) && !chip.grabbed)
             {
-                gameObject.transform.SetParent(paw);
-                holdingChip = true;
+                
+                chip.gameObject.transform.SetParent(paw);
+                chip.gameObject.transform.localPosition = Vector3.zero;
+                //holdingChip = true;
+                chip.grabbed = true;
+                ctrlDisplay.HideHoldUI();
             }
         }
     }
@@ -181,6 +189,7 @@ public class Player : NetObject
 
         if (other.gameObject.GetComponent<Microchip>())
         {
+            
             if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
             ctrlDisplay.HideHoldUI();
         }
