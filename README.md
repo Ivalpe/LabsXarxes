@@ -43,12 +43,13 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * **Client-controlled -> Puzzle tiles**
 
   * Players can interact with the board by clicking on lit up puzzle tiles matching their color, which rotates them 90º clockwise
-  * The change is notified to the server, which changes the server board, and then it notifies all users so they update their own
+  * The change is notified to the server, which changes the server board, and then it notifies all users so they update their own 
 
-* **Server-controlled -> Timer door**
+* **Server-controlled -> Door Timer, Microchips**
 
   * The server itself moves a door within the game scene, slowly closing it as a built in timer to add time pressure to complete the puzzle
   * All players see the door movement simultaneously
+  * Microchips have a 10% chance of spawning upon the player rotating a tile, and are set to follow the player's paw position when pressing E to grab.
 
 ### Disconnect Handling
 
@@ -57,21 +58,44 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 ### Changes from Previous Iteration
 
-* **Replication (passive):** It handles over 3 kind of data (doorData). We choose a passive model because it reduces the chances of cheating, if each client calculated its own state one could modify the timer or open the door befor the timer runs out.Also the code is simpler it searched the object by id and updates the variables without recalculating the simulation.
+* **Replication (passive):** It handles over 3 kind of data (doorData). We choose a passive model because it reduces the chances of cheating, if each client calculated its own state one could modify the timer or open the door befor the timer runs out. Also the code is simpler it searched the object by id and updates the variables without recalculating the simulation.
 
-* **Game Loop** The game can be completed and it has both lose and win conditions
+* **Game Loop**: The game can be completed and it has both lose and win conditions, being able to return to the main menu and start a new game if the players run out of time. 
 
-* **Fixes from previous Handling**
+* **New UI for the Waiting Room**: including colored icons in the chat next to the players' user names
+
+* **Host (running server) can join as a player**: on the Waiting Room, you can create or join a room, creating assigns the server manager to that user, while the others are assigned a client manager
+
+* **Items**: Microchips have a 10% chance of spawning from a rotating tile, if they are grabbed and brought to the power box located next to the door, they add 10 seconds to the countdown timer displayed at the back wall of the game scene room, giving the players more time to finish the puzzle and move to the door. If they stay on the ground for over 5 seconds, they start flickering increasingly faster until they disappear (destroyed by replication managers, as well), so that they don't get accumulated nor exploited by the players.
+
+* **Decorated Scene and New Tile Designs** to fit the theme of the game more accurately (an old telephone line central run by cat workers).  
+
+* **Fixes from previous handout**
+  * Tiles now rotate with a single click and emission works properly 
+  * Victory Check is now implemented and works properly
 
 ### Bonus Implementations
 
-* Background Music and SFX
-* VFX
-*
+* **Background Music and SFX**: A single track for the gamescene + randomized sound effects from an array to reduce audio fatigue
+* **Fire and Confetti VFX**: For improving user feedback upon completing the puzzle
+* **Cat Player Models** with Changing Color & Movable Hands (follow cursor)
+* **Grab Mechanics**: being able to grab 
+* **Replicated Images (Cat Memes) Speech Bubbles** representing the two endlines of a call the board is connecting. The pictures are chosen randomly for each new game, but they are replicated on all clients and host (player running the server).
+
 
 ## Known Bugs
 
-* 
+* The right paw of the player moves according to the cursor, but for unknown reasons, even if on scene view the paw would be seen passing in front of the player, from the user's POV, the hand suddenly disappears, except if it gets very close to the camera's bottom limits. Due to a lack of time, the hand position is not replicated, as it's not strictly necessary for the core loop to work, we considered it a lower priority compared to objects like the door or the tiles.
+
+* The Grab UI does not deactivate properly and shows for both players even if only one is close enough to a microchip to trigger it.
+
+* Tile Rotation should be disabled when puzzle is solved
+
+* Players can join a room without a name
+
+* Player icons on the waiting room should be updated to match the current cat avatars
+
+*
 
 ## Low Latency & Reliability
 
@@ -92,6 +116,7 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * Gameplay
 
   * **Movement:** WASD
+  * **Grab**: E
   * **Jumping:** Space Bar
   * Simply interact with the pipe tiles by hovering the cursor to highlight them, and clicking with the Left Mouse Button to rotate them.
 
@@ -115,30 +140,36 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 ## Team & Tasks
 
-* Ivan Alvarez - [Ivalpe](https://github.com/Ivalpe)
+* Iván Álvarez - [Ivalpe](https://github.com/Ivalpe)
+  * Victory Check
 
-  * Puzzle tile logic (randomly generated board, check if puzzle is solved)
-* Lara Guevara - [LaraGuevara](https://github.com/LaraGuevara)
+* Lara Guevara - [LaraGuevara](https://github.com/LaraGuevara):
+  * Main Menu
+  * Unified Builds (Client & Server) 
+  * Network Simulator
 
-  * Serializer script
-  * Player movement
 * Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
-
-  * Billboards
-  * Win and Defeat Logic
+  * Room Decoration
+  * Network Conditions (lag & jitter simulation)
+  * 
+  
 * Maria Besora - [mariabeo](https://github.com/mariabeo)
+  * Door Changes & Improvements
+  * Room Decoration
+  * Flickering Light for Feedback 
 
-  * Door controller
-  * Debug controls
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
-  * Player Jump (+Server Authoritative Physics)
-  * Server Scene View
-  * Board Spawning & Syncing
-  * Tile Emission & Rotation across Server and Clients
+  * Tile Replication
+  * Cat Models Implementation
+  * Microchip Spawning & Adding Extra Time Mechanic
+  * Grab Mechanic
+  * Music, VFX & SFX Implementation
+  * Replicated Speech Bubbles Replication
+  * Lose Screen UI & Going Back To Menu (Resetting Connections)
 
 * Jana Puig - [JanaPuig](https://github.com/JanaPuig)
 
-  * Spawn +2 players
-  * Door controller
-  * Debug controls
+  * Player & Door Replication
+  * Door & Timer Mechanics Updates
+  * Victory / Loss Condition Triggering
 
