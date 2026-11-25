@@ -341,12 +341,18 @@ public class ConnectionManager : NetworkManager
                 case DoorState.Closing:
                     doorOpening -= dt / ClousingTimer;
 
+                    bool SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
+
+                    if (!SomePlayerInTheRoom && boardScript.solved)
+                    {
+                        DebugWinGame();
+                        break;
+                    }
+
                     if (doorOpening <= 0.0f)
                     {
                         doorOpening = 0.0f;
                         doorState = DoorState.Closed;
-
-                        bool SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
 
                         if (!SomePlayerInTheRoom && boardScript.solved)
                         {
@@ -363,10 +369,6 @@ public class ConnectionManager : NetworkManager
                     break;
             }
 
-            //////send world info to all users
-            //List<PlayerInfo> playerList = new List<PlayerInfo>(playerInfoDic.Values);
-            //byte[] worldPacket = serializer.SerializeWorldPos(playerList, false, doorOpening, ClousingTimer, doorState);
-            //cudp.UDPSendToAllClients(worldPacket);
 
             // Mark all objects to update
             foreach (int id in linkingContext.Ids)
@@ -533,32 +535,7 @@ public class ConnectionManager : NetworkManager
             else if (args[i] == "-noautostart") autoStart = false;
         }
     }
-    void OnGUI()
-    {
-        //GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-        //GUILayout.Label("SERVER   name " + serverName);
-
-        //if (!ctpc.IsRunning && !cudp.IsRunning)
-        //{
-        //    if (GUILayout.Button("Start server", GUILayout.Width(110)))
-        //    {
-        //        ctpc.StartNetwork();
-        //        cudp.StartNetwork();
-        //    }
-        //}
-        //else if (GUILayout.Button("Stop", GUILayout.Width(110)))
-        //{
-        //    ctpc.Disconnect();
-        //    cudp.Disconnect();
-        //}
-
-        //lock (m_log)
-        //    for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
-        //        GUILayout.Label(m_log[i]);
-
-        //GUILayout.EndArea();
-    }
-
+  
     public override void SendChatMessage(string msg)
     {
         ctpc.TCPSendChatMessage(null, msg, playerInfoDic[hostPlayerId].colorIndex);
@@ -595,10 +572,7 @@ public class ConnectionManager : NetworkManager
         }
 
 
-        //StartCoroutine(RestartNewGameRoutine());
-
-        //byte[] packet = serializer.SerializeTypes(false, CommandType.WinGame);
-        //ctpc.TCPSendToAllClients(packet);
+       
     }
 
     public void DebugLoseGame()
@@ -611,14 +585,13 @@ public class ConnectionManager : NetworkManager
         gameOver = 2;
         Log("Lose Game");
 
-        //byte[] packet = serializer.SerializeTypes(false, CommandType.LoseGame);
-        //ctpc.TCPSendToAllClients(packet);
+        
 
         if(ClientNetworkManager.Instance != null)
         {
             ClientNetworkManager.Instance.ShowLoseScreen();
         }
-        //StartCoroutine(RestartNewGameRoutine());
+        
 
     }
 
@@ -654,8 +627,7 @@ public class ConnectionManager : NetworkManager
 
 
                     p.tileGO.GetComponent<Renderer>().material.SetColor("_Color", p.tileColor);
-                    //p.tileGO.GetComponent<Renderer>().material.EnableKeyword("_EMISSION");
-                    //p.tileGO.GetComponent<Renderer>().material.SetColor("_Emission", Color.black);
+                  
 
 
                 }
@@ -694,14 +666,7 @@ public class ConnectionManager : NetworkManager
             
         }
         
-        //byte[] boardPacket = serializer.SerializeBoardState(pipeMap);
-
-       
-
-        //foreach(var user in ctpc.usersConnected)
-        //{
-        //    ctpc.SendPacketTCP(boardPacket, user.Key);
-        //}
+        
         
     }
 
@@ -757,26 +722,7 @@ public class ConnectionManager : NetworkManager
 
     }
 
-    private IEnumerator RestartNewGameRoutine()
-    {
-        yield return new WaitForSeconds(5f);
-
-        //clean scene
-        linkingContext = new LinkingContext();
-        replicationServer = new ReplicationManagerServer(linkingContext);
-        spawnedPlayers.Clear();
-
-        gameOver = 0;
-        isRestarting = false;
-
-        //new secne
-        if (cudp != null && cudp.IsRunning)
-        {
-            cudp.UDPStartGame();
-        }
-    }
-
-
+  
     public void TryDropItem(PipeControl board, GameObject tileGO)
     {
 
@@ -790,9 +736,7 @@ public class ConnectionManager : NetworkManager
             int dropID = linkingContext.Register(dropItem);
             if (dropItem.TryGetComponent(out Microchip chip)) chip.id = dropID;
 
-            //Microchip chip = dropItem.GetComponent<Microchip>();
-            //chip.spawnDir = tileGO.transform.forward;
-            //chip.throwStr = boardScript.dropStrength;
+          
 
             replicationServer.MarkCreate(dropID);
             if (dropItem)

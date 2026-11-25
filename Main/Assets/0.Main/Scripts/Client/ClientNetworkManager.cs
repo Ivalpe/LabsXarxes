@@ -382,24 +382,7 @@ public class ClientNetworkManager : NetworkManager
         //has to be reassigned because the GO's info was filled on the server's boardScript, not this one.
     }
 
-    //public void OnBoardUpdate(BinaryReader reader) //this method shouldn't be called anymore (replication takes care of it)
-    //{
-    //    int xIndex = reader.ReadInt32(); 
-    //    int yIndex = reader.ReadInt32();
-
-    //    PipeControl boardScript = GameObject.FindAnyObjectByType<PipeControl>();
-
-    //    Pipe[,] pMap = boardScript.pipeMap;
-
-
-    //    if (pMap[xIndex, yIndex].tileGO.TryGetComponent<TubeTile>(out TubeTile tileScript))
-    //    {
-    //        tileScript.StartRotation(pipeMap[xIndex, yIndex]); 
-    //    }
-
-    //    //if (boardScript) boardScript.pipeMap = pipeMap;
-    //    //else Debug.Log("BoardScript not found when updating board!");
-    //}
+   
 
     public void RegisterPlayerScript(Player comp)
     {
@@ -412,63 +395,6 @@ public class ClientNetworkManager : NetworkManager
         return usersList;
     }
 
-    void OnGUI()
-    {
-        //if (!isPlaying)
-        //{
-        //    GUILayout.BeginArea(new Rect(10, 10, Screen.width - 20, Screen.height - 20));
-        //    GUILayout.Label("CLIENT   port " + port);
-
-        //    GUILayout.BeginHorizontal();
-        //    if (!TCPconnection.IsRunning && !UDPconnection.IsRunning)
-        //    {
-        //        //editable username before connecting to server
-        //        GUILayout.Label("Username:", GUILayout.Width(70));
-        //        userName = GUILayout.TextField(userName, GUILayout.Width(110));
-        //        //server ip layout
-        //        GUILayout.Label("Server IP:", GUILayout.Width(70));
-        //        serverIp = GUILayout.TextField(serverIp, GUILayout.Width(120));
-        //        //connect button
-        //        if (GUILayout.Button("Connect", GUILayout.Width(110)))
-        //        {
-        //            //start both tcp and udp networks
-        //            TCPconnection.StartNetwork(serverIp, userName, TCPport);
-        //            UDPconnection.StartNetwork(serverIp, userName, UDPport);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //username shown
-        //        GUILayout.Label("Username: " + userName);
-        //        //chat text UI
-        //        text = GUILayout.TextField(text, GUILayout.Width(120));
-        //        //send chat message to server (using TCP)
-        //        if (GUILayout.Button("Send", GUILayout.Width(110))) TCPconnection.SendPacket(serializer.SerializeText(text));
-        //        //disconnect button
-        //        if (GUILayout.Button("Disconnect", GUILayout.Width(110)))
-        //        {
-        //            //disconnect both networks
-        //            TCPconnection.Disconnect();
-        //            UDPconnection.Disconnect();
-
-        //            //clear user list
-        //            usersList.Clear();
-        //            playersToSpawn.Clear();
-        //            spawnedPlayers.Clear();
-        //        }
-        //    }
-
-        //    GUILayout.EndHorizontal();
-
-        //    lock (m_log)
-        //    {
-        //        for (int i = Mathf.Max(0, m_log.Count - 18); i < m_log.Count; i++)
-        //            GUILayout.Label(m_log[i]);
-        //    }
-
-        //    GUILayout.EndArea();
-        //}
-    }
 
     public void SetPlayerColorIndex(byte index)
     {
@@ -567,61 +493,7 @@ public class ClientNetworkManager : NetworkManager
             linkingContext.Register(door.gameObject, 1);
         }
 
-        //SpeechBubble[] speechBubbles = FindObjectsByType<SpeechBubble>(FindObjectsSortMode.None);
-
-        //foreach (var b in speechBubbles)
-        //{
-            
-        //    //int id = b.gameObject.GetComponent<NetObject>().id;
-        //    linkingContext.Register(b.gameObject, b.id);
-        //}
-
-        //foreach (var player in playersToSpawn)
-        //{
-        //    Quaternion rotation = Quaternion.Euler(player.rotation);
-        //    GameObject instancePlayer = Instantiate(playerPrefab, player.position, rotation);
-
-        //    //Text name
-        //    TMPro.TextMeshProUGUI textNamePlayer = instancePlayer.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-        //    if (textNamePlayer != null) textNamePlayer.text = player.playerName;
-
-        //    //material color
-        //    var renderer = instancePlayer.GetComponentInChildren<Renderer>();
-        //    Color color = playerColors[player.colorIndex];
-        //    if (renderer != null) renderer.material.SetColor("_Color", color);
-        //    Rigidbody rb = instancePlayer.GetComponent<Rigidbody>();
-        //    if (rb)
-        //        rb.isKinematic = true; //otherwise you can't use rb.MovePosition or rb.MoveRotation
-
-        //    //check if the user is this client
-        //    if (player.id != userId)
-        //    {
-        //        Transform camaraRemota = instancePlayer.transform.Find("First Person Camera");
-        //        if (camaraRemota != null) camaraRemota.gameObject.SetActive(false);
-
-        //        PlayerInput playerInput = instancePlayer.GetComponent<PlayerInput>();
-        //        if (playerInput != null) playerInput.enabled = false;
-
-        //        Player playerScript = instancePlayer.GetComponent<Player>();
-        //        if (playerScript != null) playerScript.enabled = false;
-        //    }
-        //    else
-        //    {
-        //        //assign color to player script
-
-        //        playerColorIndex = player.colorIndex; //caching it to use in an action
-        //        if (instancePlayer.TryGetComponent(out Player localPlayerScript))
-        //        {
-        //            localPlayerScript.SetPlayerColor(player.colorIndex);
-        //        }
-        //        //OnPlayerRegistered += SetClientPlayerColor;
-
-        //    }
-
-        //    //add to dictionary
-        //    spawnedPlayers[player.id] = instancePlayer;
-        //}
-
+        
         OnAllPlayersSpawned?.Invoke();
 
     }
