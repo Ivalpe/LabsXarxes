@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using System.IO;
+using System.Collections;
 
 
 public class DoorController : NetObject
@@ -36,7 +37,9 @@ public class DoorController : NetObject
             ClosedRightPos = door_right.position;
         }
         //doorLight=GetComponent<Light>();
+        doorLight.intensity = 0.0f;
     }
+    
     //Slowly closes the door until its fully closed from the previously setted up pos
     void Update()
     {
@@ -158,7 +161,14 @@ public class DoorController : NetObject
 
     private void Flicker()
     {
-        doorLight.intensity = Random.Range(0f, 1.5f);
+        time();
+        doorLight.intensity = Random.Range(1f, 1.5f);
+       
     }
 
+    IEnumerator time()
+    {
+        yield return new WaitForSeconds(2);
+    }
+     
 }
