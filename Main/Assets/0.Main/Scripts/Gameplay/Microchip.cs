@@ -7,58 +7,77 @@ public class Microchip : NetObject
 
     [HideInInspector] public Vector3 spawnDir = Vector3.zero;
     [HideInInspector] public float throwStr = 0;
-    Renderer renderer;
-    ConnectionManager connectionManager = ConnectionManager.Instance;
-    
-    int maxFlickers = 10;
-    float blinkInterval = 0.5f;
+
     public bool grabbed = false;
     public bool applied = false;
-    public bool destroyed = false;
-    Coroutine flickerRoutine;
+
+    [SerializeField] float lifeTime = 5f;
+    [SerializeField] int blinks = 10;
+    [SerializeField] float blinkInterval = 0.4f;
+
+    ConnectionManager server;      // only exists on the host
+    Renderer[] renderers;
+    Coroutine lifeRoutine;
+    bool visible = true;
+
     void Start()
     {
-        renderer = GetComponentInChildren<Renderer>();
-        flickerRoutine = StartCoroutine(Flicker());
+        server = ConnectionManager.Instance;
+        if (server != null) lifeRoutine = StartCoroutine(Flicker());
+        else if (TryGetComponent(out Rigidbody rb)) 
+            rb.isKinematic = true;  // clients: position comes from packets
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator Flicker()
     {
-        if (grabbed)
+        yield return new WaitForSeconds(lifeTime);
+        for (int i = 0; i < blinks; i++)
         {
-            if (flickerRoutine != null)
-            {
-                StopCoroutine(flickerRoutine);
-                flickerRoutine = null;
-                renderer.gameObject.SetActive(true);
-                Rigidbody rb = GetComponent<Rigidbody>();
-                rb.useGravity = false;
-                rb.isKinematic = false;
-            }
-            
-            
+            SetVisible(false); 
+            yield return new WaitForSeconds(blinkInterval);
+            SetVisible(true); 
+            yield return new WaitForSeconds(blinkInterval);
+            blinkInterval -= i / blinks;
+        }
+        Destroy(gameObject);
+    }
+
+    public void OnGrabbed()
+    {
+        grabbed = true;
+        if (lifeRoutine != null) 
+        { 
+            StopCoroutine(lifeRoutine); 
+            lifeRoutine = null; 
+        }
+        SetVisible(true);
+    }
+
+    void SetVisible(bool value)
+    {
+        visible = value;
+        if (renderers == null) renderers = GetComponentsInChildren<Renderer>(); 
+        foreach (var r in renderers) if (r) r.enabled = value;
+    }
+
+    void OnDestroy()
+    {
+        if (server != null && id != 0)
+        {
+            server.replicationServer.MarkDestroy(id);
+            server.linkingContext.Unregister(id);
         }
     }
 
-
-
-    public override void Write(BinaryWriter w)
-    {
-        base.Write(w);
-        w.Write(destroyed);
+    public override void Write(BinaryWriter w) 
+    { 
+        base.Write(w); 
+        w.Write(visible); 
     }
-
-    public override void Read(BinaryReader r)
-    {
-        base.Read(r);
-        destroyed = r.ReadBoolean();
-        if(connectionManager && destroyed)
-        {
-            connectionManager.replicationServer.MarkDestroy(id);
-            connectionManager.linkingContext.Unregister(id);
-            Destroy(gameObject);
-        }
+    public override void Read(BinaryReader r) 
+    { 
+        base.Read(r); 
+        SetVisible(r.ReadBoolean()); 
     }
 
     private void ThrowMicrochip(Vector3 dir, float str)
@@ -66,33 +85,9 @@ public class Microchip : NetObject
         Rigidbody rb = GetComponent<Rigidbody>();
         if (rb)
             rb.AddForce(dir * str, ForceMode.Impulse);
-       
-    }
-
-    IEnumerator Flicker()
-    {
-
-        yield return new WaitForSeconds(5f);
-
-        for(int s = 1; s <= maxFlickers; s++)
-        {
-            //renderer.enabled = false;
-            if (grabbed) yield break;
-            
-            renderer.gameObject.SetActive(false);
-            yield return new WaitForSeconds(blinkInterval);
-            if (grabbed) yield break;
-
-            renderer.gameObject.SetActive(true);
-            yield return new WaitForSeconds(blinkInterval);
-            blinkInterval -= (s / 10.0f);
-        }
-
-        if (grabbed) yield break;
-        destroyed = true;
 
     }
-
-    
-
 }
+
+
+

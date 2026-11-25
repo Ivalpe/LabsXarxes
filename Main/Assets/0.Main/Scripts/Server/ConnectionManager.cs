@@ -348,13 +348,13 @@ public class ConnectionManager : NetworkManager
 
                         bool SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
 
-                        if (SomePlayerInTheRoom)
+                        if (!SomePlayerInTheRoom && boardScript.completedPuzzle)
                         {
-                            DebugLoseGame();
+                            DebugWinGame();
                         }
                         else
                         {
-                            DebugWinGame();
+                            DebugLoseGame();
                         }
                     }
                     break;
@@ -580,6 +580,7 @@ public class ConnectionManager : NetworkManager
 
     public void DebugWinGame()
     {
+        
         if (isRestarting) return;
         isRestarting = true;
 
@@ -787,11 +788,12 @@ public class ConnectionManager : NetworkManager
             GameObject dropItem = Instantiate(board.dropPrefab, tileGO.transform.position, Quaternion.identity);
             dropItem.transform.SetParent(null);
             int dropID = linkingContext.Register(dropItem);
+            if (dropItem.TryGetComponent(out Microchip chip)) chip.id = dropID;
 
             //Microchip chip = dropItem.GetComponent<Microchip>();
             //chip.spawnDir = tileGO.transform.forward;
             //chip.throwStr = boardScript.dropStrength;
-            
+
             replicationServer.MarkCreate(dropID);
             if (dropItem)
             {
@@ -800,5 +802,13 @@ public class ConnectionManager : NetworkManager
                     rb.AddForce(tileGO.transform.forward * board.dropStrength, ForceMode.Impulse);
             }
         }
+    }
+
+    public void AddTime(float seconds)
+    {
+        if (doorState != DoorState.Closing) { ClousingTimer += seconds; return; }
+        float remaining = doorOpening * ClousingTimer;
+        ClousingTimer += seconds;
+        doorOpening = Mathf.Clamp01((remaining + seconds) / ClousingTimer);
     }
 }

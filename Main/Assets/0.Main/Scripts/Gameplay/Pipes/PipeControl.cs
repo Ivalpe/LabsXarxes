@@ -46,6 +46,8 @@ public class PipeControl : MonoBehaviour
     public Pipe[,] pipeMap;
     public string tablero;
 
+    public bool completedPuzzle = false;
+
     public List<Pipe> correctTiles = new List<Pipe>();
 
     public static System.Action<Pipe[,]> OnBoardCreated;
@@ -64,9 +66,6 @@ public class PipeControl : MonoBehaviour
 
         //get network manager
         networkManager = ClientNetworkManager.Instance;
-
-
-
     }
 
     void GenerateBoardData()
@@ -227,21 +226,23 @@ public class PipeControl : MonoBehaviour
                         t.tileGO.GetComponent<Renderer>().material.SetTexture("_BaseMap", correctTex);
                     }
 
-                    connectionManager.DebugWinGame();
+                    completedPuzzle = true; //connectionManager.DebugWinGame();
                     return;
                 }
+            }
 
-                switch (dir)
-                {
-                    case 1: yp += 1; break;
-                    case 2: xp += 1; break;
-                    case 3: yp -= 1; break;
-                    case 4: xp -= 1; break;
-                }
+            switch (dir)
+            {
+                case 1: yp += 1; break;
+                case 2: xp += 1; break;
+                case 3: yp -= 1; break;
+                case 4: xp -= 1; break;
             }
         }
 
 
 
     }
+
+
 }

@@ -344,9 +344,9 @@ public class MainSerializer : MonoBehaviour
                 case CommandType.LoseGame:
                     networkManager.ShowLoseScreen();
                     break;
-                case CommandType.ApplyTime:
-                    networkManager.currentClousingTimer += 10;
-                    break;
+                //case CommandType.ApplyTime:
+                //    networkManager.currentClousingTimer += 10;
+                //    break;
                 case CommandType.HostDisconnected:
                     networkManager.ShowConnectionErrorMsg();
                     break;
@@ -462,9 +462,9 @@ public class MainSerializer : MonoBehaviour
                     networkManager.cudp.UDPStartGame();
                     break;
                 case CommandType.AddTime:
-                    //networkManager.ClousingTimer += 10;
-                    byte[] packet = SerializeTypes(false, CommandType.ApplyTime);
-                    networkManager.cudp.UDPSendToAllClients(packet);
+                    networkManager.AddTime(10f);
+                    //byte[] packet = SerializeTypes(false, CommandType.ApplyTime);
+                    //networkManager.cudp.UDPSendToAllClients(packet); --> the serializer already updates timer on clients
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");

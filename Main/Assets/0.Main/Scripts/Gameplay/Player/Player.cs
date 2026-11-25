@@ -17,7 +17,7 @@ public class Player : NetObject
     public System.Action<Color> OnColorSet;
     public static System.Action<Pipe> OnTileRotated;
 
-
+    Camera playerCam;
     bool holdingChip = false;
     public Transform paw;
     public float dropChance = 0.1f;
@@ -39,6 +39,7 @@ public class Player : NetObject
     PipeControl boardScript;
     ControlsDisplay ctrlDisplay;
 
+    GameObject grabbedChip = null;
     Material mat;
 
     public byte colorIndex;
@@ -70,12 +71,19 @@ public class Player : NetObject
 
         //if (canGrab && Input.GetKeyDown(KeyCode.E))
         //{
+        if (grabbedChip != null)
+        {
+            grabbedChip.gameObject.transform.position = paw.transform.position;
+        }
 
         //}
+        playerCam = GetComponentInChildren<Camera>();
         Vector2 screenPos = Pointer.current.position.value;
-        Ray ray = Camera.main.ScreenPointToRay(screenPos);
-        paw.parent.SetPositionAndRotation(ray.origin + ray.direction.normalized, Quaternion.identity);
+        Ray ray = playerCam.ScreenPointToRay(screenPos);
+        paw.parent.SetPositionAndRotation(ray.origin + ray.direction.normalized, playerCam.transform.rotation);
 
+        Debug.Log("screenPos: " + screenPos);
+        //Debug.Log("paw position: " + paw.parent.transform.position);
         if (nearBoard)
         {
             
@@ -149,6 +157,15 @@ public class Player : NetObject
         }
     }
 
+    void LateUpdate()
+    {
+        if (!playerCam) playerCam = GetComponentInChildren<Camera>();
+        if (!playerCam) return;
+
+        Ray ray = playerCam.ScreenPointToRay(Pointer.current.position.value);
+        paw.parent.SetPositionAndRotation(ray.origin + ray.direction.normalized, playerCam.transform.rotation);
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.GetComponent<PipeControl>())
@@ -162,20 +179,22 @@ public class Player : NetObject
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.gameObject.GetComponent<Microchip>() && !holdingChip)
+        if (other.gameObject.GetComponent<Microchip>())
         {
             Microchip chip = other.gameObject.GetComponent<Microchip>();
             if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
             else ctrlDisplay.ShowHoldUI("Grab");
             if (Input.GetKeyDown(KeyCode.E) && !chip.grabbed)
             {
+                //chip.gameObject.transform.SetParent(paw.transform);
                 
-                chip.gameObject.transform.SetParent(this.gameObject.transform);
-                //chip.gameObject.transform.localPosition = Vector3.zero;
                 //holdingChip = true;
-                chip.grabbed = true;
+                chip.OnGrabbed();
                 ctrlDisplay.HideHoldUI();
+                grabbedChip = chip.gameObject;
             }
+
+
         }
     }
 
@@ -192,6 +211,7 @@ public class Player : NetObject
             
             if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
             ctrlDisplay.HideHoldUI();
+            
         }
     }
 

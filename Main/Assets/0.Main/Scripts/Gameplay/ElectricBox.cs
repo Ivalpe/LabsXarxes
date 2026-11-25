@@ -34,8 +34,8 @@ public class ElectricBox : MonoBehaviour
     {
         zapped = true;
 
-        transform.SetParent(socket.transform);
-        transform.localPosition = Vector3.zero;
+        chip.transform.SetParent(socket.transform);
+        chip.transform.position = socket.transform.position;
         yield return new WaitForSeconds(1.0f);
         Destroy(chip);
 
@@ -49,22 +49,25 @@ public class ElectricBox : MonoBehaviour
 
         if (ConnectionManager.Instance)
         {
+            ConnectionManager.Instance.AddTime(10f);
             
-            byte[] packet = ConnectionManager.Instance.serializer.SerializeTypes(false, MainSerializer.CommandType.ApplyTime);
-            ConnectionManager.Instance.cudp.UDPSendToAllClients(packet);
+            //byte[] packet = ConnectionManager.Instance.serializer.SerializeTypes(false, MainSerializer.CommandType.AddTime);
+            //ConnectionManager.Instance.cudp.UDPSendToAllClients(packet);
         }
-        else if (ClientNetworkManager.Instance) 
-        { 
-            
+        else if (ClientNetworkManager.Instance)
+        {
+
             byte[] packet = ClientNetworkManager.Instance.serializer.SerializeTypes(false, MainSerializer.CommandType.AddTime);
             ClientNetworkManager.Instance.UDPconnection.SendPacket(packet);
-            
+
         }
 
         yield return new WaitForSeconds(0.5f);
 
         _light.enabled = true;
         zapped = false;
+
+        
 
         
     }
