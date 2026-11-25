@@ -15,25 +15,25 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 ### TCP \& UDP Networking
 
 * Server opens both TCP and UDP at once, as well as clients connect to both when connecting to the server
-* **TCP Network:** Used for lobby management (connected client list), chat messaging, board / tile updates and win/lose screens
-* **UDP Network:** Used for low-latency state synchronization in the game scene (player movement, object movement) and heartbeat tracking (pings) to ensure clients are still connected.
+* **TCP Network:** Used for lobby management (connected client list), chat messaging. 
+* **UDP Network:** Used for low-latency state synchronization in the game scene (player movement, object movement) and heartbeat tracking (pings) to ensure clients are still connected. Also tile updates and win/lose screens.
 
 ### Lobby Management \& Dynamic Player Tracking
 
-* **Server Authority and Assigning Host Client:** Server acts as the main owner of the room. When the first client connects, the server assigns it a host role, allowing this client to change to the Play Scene (for all clients)
+* **Server Authority and Assigning Host Client:** Server acts as the main owner of the room and the host, allowing them to change to the Play Scene (for all clients)
 
   * When host user disconnects, all clients are also disconnected from the room
 * **Client List:** Server sends to all clients the list of connected clients in the room, updating the list when users join or disconnect
 
 ### Chat Room
 
-* In the waiting room, clients are able to send chat messages that all users receive in the format "\[username]: chat message" using TCP
+* In the waiting room, users are able to send chat messages that all users receive in the format "\[username]: chat message" using TCP
 
 ### Gameplay
 
 #### Player Movement
 
-* Player movement is handled by the clients sending their inputs (horizontal and vertical axis, yaw rotation and a boolean for jumping)
+* Player movement is handled by the users sending their inputs (horizontal and vertical axis, yaw rotation and a boolean for jumping)
 * Using the received information, the server handles updating the player' positions
 * This is helpful to avoid exploiting the system to cheat, since the server handles all the calculations and sets the players' position
 * Additionally, we found it to be more of a standard in multiplayer games to send inputs and not direct states or coordinates
@@ -44,13 +44,11 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
   * Players can interact with the board by clicking on lit up puzzle tiles matching their color, which rotates them 90º clockwise
   * The change is notified to the server, which changes the server board, and then it notifies all users so they update their own
-  * Handled by TCP
 
 * **Server-controlled -> Timer door**
 
   * The server itself moves a door within the game scene, slowly closing it as a built in timer to add time pressure to complete the puzzle
   * All players see the door movement simultaneously
-  * Handled by UDP
 
 ### Disconnect Handling
 
@@ -59,20 +57,21 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 ### Changes from Previous Iteration
 
-* **New Serializer script:** Sending packets is now serialized, sending a MsgType byte to identify what kind of message is being sent so the client or server know how to handle it
-* **Player Movement:** users in the game scene can use WASD and the Space Bar to move around the scene, with the movement being shown to all users in the game
-* **Gameplay:** significant steps towards a fully playable iteration, including randomly generated puzzle board, puzzle tile interaction (shown to all users), color assignments to users, win and defeat screens...
+* **Replication (passive):** It handles over 3 kind of data (doorData). We choose a passive model because it reduces the chances of cheating, if each client calculated its own state one could modify the timer or open the door befor the timer runs out.Also the code is simpler it searched the object by id and updates the variables without recalculating the simulation.
+
+* **Game Loop** The game can be completed and it has both lose and win conditions
+
+* **Fixes from previous Handling**
 
 ### Bonus Implementations
 
-* **Jumping:** players can use the Space Bar to jump
-* **More than two players:** more than two players can join, have a color assigned and interact with the board, which uses tiles with as many colors as players connected.
+* Background Music and SFX
+* VFX
+*
 
 ## Known Bugs
 
-* **Tile Emission:** when hovering the mouse over a tile and then moving it away while going past the screen limits, sometimes the emissive stays on.
-* **Tiles registering click on 2nd attempt:** when clicking on a tile to rotate it, very frequently this first click does not register, and the tile must be clicked a second time for it to actually rotate. 
-* **Tiles rotating twice:** Probably due to continuous mouse input, sometimes a tile can register two rotations within a single click, and it appears as if it rotated 180º.
+* 
 
 ## Low Latency & Reliability
 
@@ -83,15 +82,12 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 ## Instructions
 
-* Alongside this README, there's two accompanying folders: ClientBuild and ServerBuild
-
-  * ClientBuild --> contains the executable client
-  * ServerBuild --> contains the executable server
+* Alongside this README, there's two accompanying folders: CATasthrophyLineBuild
 * To run locally on the same device, run both executables before connecting to the server
 * To run on separate devices:
 
-  * On the device running the ServerBuild, use the console to run "ipconfig" to gain the ip
-  * Type that ip into the device(s) using the ClientBuild before connecting to the server
+  * On the host device, use the console to run "ipconfig" to gain the ip
+  * Type that ip into the other device(s) before connecting to the server
 
 * Gameplay
 
