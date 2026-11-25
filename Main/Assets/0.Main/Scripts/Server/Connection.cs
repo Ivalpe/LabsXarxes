@@ -135,6 +135,20 @@ public class Connection : MonoBehaviour
                 //remove disconnected clients from lists
                 udpPings.Remove(user);
                 lock (m_knownClients) m_knownClients.Remove(user);
+
+                //GameManager gm = FindAnyObjectByType<GameManager>();
+
+                //if (gm)
+                //{
+                //    if (gm.isHost)
+                //    {
+                //        byte[] dcPacket = serializer.SerializeTypes(false, CommandType.HostDisconnected);
+                //        UDPSendToAllClients(dcPacket);
+                //    }
+
+                //}
+                SendHostDisconnect();
+
                 Log("[SERVER] Client disconnected due to inactivity: " + user);
             }
         }
@@ -160,6 +174,19 @@ public class Connection : MonoBehaviour
         StartThread(ServerThread);
     }
 
+    public void SendHostDisconnect()
+    {
+        GameManager gm = FindAnyObjectByType<GameManager>();
+        if (gm)
+        {
+            if (gm.isHost)
+            {
+                byte[] dcPacket = connectionManager.serializer.SerializeTypes(false, MainSerializer.CommandType.HostDisconnected);
+                UDPSendToAllClients(dcPacket);
+            }
+        }
+    }
+
     public void Disconnect()
     {
         if (connectionType == ConnectionType.UDP)
@@ -171,6 +198,8 @@ public class Connection : MonoBehaviour
             // No Shutdown() here: UDP has no connection to shut down.
             if (socket != null) { try { socket.Close(); } catch { } socket = null; }
 
+
+            SendHostDisconnect();
 
             // PlayerInfo //He comentado esto
 

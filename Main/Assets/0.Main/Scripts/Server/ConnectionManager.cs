@@ -94,7 +94,7 @@ public class ConnectionManager : NetworkManager
     public DoorState doorState = DoorState.Opening;
     public float OpeningTimer = 3.0f;
     public float WaitingTimer = 3.0f;
-    public float ClousingTimer = 60.0f;
+    public float ClousingTimer = 120.0f;
 
     public float doorOpening = 0.0f;
     private float StateTimer = 0.0f;

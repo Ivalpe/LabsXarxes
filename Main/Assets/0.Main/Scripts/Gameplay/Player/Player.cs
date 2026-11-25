@@ -167,11 +167,11 @@ public class Player : NetObject
             Microchip chip = other.gameObject.GetComponent<Microchip>();
             if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
             else ctrlDisplay.ShowHoldUI("Grab");
-            if (Input.GetKey(KeyCode.E) && !chip.grabbed)
+            if (Input.GetKeyDown(KeyCode.E) && !chip.grabbed)
             {
                 
-                chip.gameObject.transform.SetParent(paw);
-                chip.gameObject.transform.localPosition = Vector3.zero;
+                chip.gameObject.transform.SetParent(this.gameObject.transform);
+                //chip.gameObject.transform.localPosition = Vector3.zero;
                 //holdingChip = true;
                 chip.grabbed = true;
                 ctrlDisplay.HideHoldUI();

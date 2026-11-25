@@ -9,30 +9,56 @@ public class Microchip : NetObject
     [HideInInspector] public float throwStr = 0;
     Renderer renderer;
     ConnectionManager connectionManager = ConnectionManager.Instance;
+    
     int maxFlickers = 10;
     float blinkInterval = 0.5f;
     public bool grabbed = false;
+    public bool applied = false;
+    public bool destroyed = false;
+    Coroutine flickerRoutine;
     void Start()
     {
         renderer = GetComponentInChildren<Renderer>();
-        StartCoroutine(Flicker());
+        flickerRoutine = StartCoroutine(Flicker());
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (grabbed)
+        {
+            if (flickerRoutine != null)
+            {
+                StopCoroutine(flickerRoutine);
+                flickerRoutine = null;
+                renderer.gameObject.SetActive(true);
+                Rigidbody rb = GetComponent<Rigidbody>();
+                rb.useGravity = false;
+                rb.isKinematic = false;
+            }
+            
+            
+        }
     }
+
+
 
     public override void Write(BinaryWriter w)
     {
         base.Write(w);
+        w.Write(destroyed);
     }
 
     public override void Read(BinaryReader r)
     {
         base.Read(r);
-
+        destroyed = r.ReadBoolean();
+        if(connectionManager && destroyed)
+        {
+            connectionManager.replicationServer.MarkDestroy(id);
+            connectionManager.linkingContext.Unregister(id);
+            Destroy(gameObject);
+        }
     }
 
     private void ThrowMicrochip(Vector3 dir, float str)
@@ -45,39 +71,28 @@ public class Microchip : NetObject
 
     IEnumerator Flicker()
     {
-        if (grabbed)
-        {
-            renderer.enabled = true;
-            Rigidbody rb = GetComponent<Rigidbody>();
-            rb.useGravity = false;
-            StopCoroutine(Flicker());
-            yield return null;
-        }
- 
+
         yield return new WaitForSeconds(5f);
 
         for(int s = 1; s <= maxFlickers; s++)
         {
             //renderer.enabled = false;
+            if (grabbed) yield break;
+            
             renderer.gameObject.SetActive(false);
             yield return new WaitForSeconds(blinkInterval);
+            if (grabbed) yield break;
+
             renderer.gameObject.SetActive(true);
             yield return new WaitForSeconds(blinkInterval);
             blinkInterval -= (s / 10.0f);
         }
- 
-        
-        connectionManager.replicationServer.MarkDestroy(id);
-        connectionManager.linkingContext.Unregister(id);
-        Destroy(gameObject);
 
-        //ControlsDisplay ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
-        //ctrlDisplay.HideHoldUI();
+        if (grabbed) yield break;
+        destroyed = true;
 
-        
-        
     }
 
-
+    
 
 }

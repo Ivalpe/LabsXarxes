@@ -67,6 +67,10 @@ public class ClientNetworkManager : NetworkManager
     [Header("End Game Screens")]
     [SerializeField] private GameObject winScreenPanel;
     [SerializeField] private GameObject loseScreenPanel;
+
+    //[SerializeField] private GameObject connErrorPanel;
+
+    ControlsDisplay ctrlDisplay;
     private bool gameOver = false;
 
 
@@ -90,7 +94,7 @@ public class ClientNetworkManager : NetworkManager
 
     //variable door
     public float currentDoorOpening = 0.0f;
-    public float currentClousingTimer = 60.0f;
+    public float currentClousingTimer = 120.0f;
     public ConnectionManager.DoorState currentDoorState = ConnectionManager.DoorState.Closed;
     //game scene components
     //player component
@@ -138,6 +142,9 @@ public class ClientNetworkManager : NetworkManager
         //start connection
         TCPconnection.StartNetwork(serverIp, userName, TCPport);
         UDPconnection.StartNetwork(serverIp, userName, UDPport);
+
+        ctrlDisplay = GetComponent<ControlsDisplay>();
+        if(ctrlDisplay)ctrlDisplay.HideHoldUI();
     }
 
     private void OnEnable()
@@ -206,7 +213,11 @@ public class ClientNetworkManager : NetworkManager
 
         //update canvas ui
         //CanvasGui();
-       
+
+        if (!ctrlDisplay)
+        {
+            ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
+        }
 
         //smoothly apply transform (done here instead of OnWorldUpdate to avoid jitter)
         foreach(var player in spawnedPlayers)
@@ -635,27 +646,49 @@ public class ClientNetworkManager : NetworkManager
 
     public void ShowWinScreen()
     {
+        
         if (gameOver) return;
         gameOver = true;
+
+        ctrlDisplay.HideHoldUI();
+        ctrlDisplay.HideDisconnectUI();
 
         if (winScreenPanel != null) winScreenPanel.SetActive(true);
         if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
         Log("[GAME] Has ganado la partida");
 
-        //tartCoroutine(EndGameSec());
+        
 
     }    
     public void ShowLoseScreen()
     {
+ 
         if (gameOver) return;
         gameOver = true;
+
+        if (ctrlDisplay)
+        {
+            ctrlDisplay.HideHoldUI();
+            ctrlDisplay.HideDisconnectUI();
+        }
+
 
         if (winScreenPanel != null) winScreenPanel.SetActive(false);
         if (loseScreenPanel != null) loseScreenPanel.SetActive(true);
         Log("[GAME] Has perdido la partida");
 
-        //StartCoroutine(EndGameSec());
+        
     }
+
+    public void ShowConnectionErrorMsg()
+    {
+        if (winScreenPanel != null) winScreenPanel.SetActive(false);
+        if (loseScreenPanel != null) loseScreenPanel.SetActive(false);
+
+        if (ctrlDisplay) ctrlDisplay.ShowDisconnectUI();
+    }
+
+    
 
     System.Collections.IEnumerator EndGameSec()
     {

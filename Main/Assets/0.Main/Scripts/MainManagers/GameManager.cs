@@ -7,7 +7,7 @@ public class GameManager : MonoBehaviour
 {
     NetworkManager networkManager;
     string userName;
-    bool isHost = false;
+    public bool isHost = false;
 
     //NETWORK MANAGERS
     [SerializeField] ConnectionManager serverPrefab;

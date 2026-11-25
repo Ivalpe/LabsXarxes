@@ -17,6 +17,7 @@ public class Pipe
 
     public int rotIndex = 0;
 
+    
 
 }
 
@@ -27,7 +28,9 @@ public class PipeControl : MonoBehaviour
     public static PipeControl Instance { get; private set; }
     public GameObject cornerTile, straightTile;
 
-    [Range(0,1)]
+    public Texture correctCorner, correctStraight;
+
+    [Range(0, 1)]
     [SerializeField] public float dropChance = 0.1f;
     [SerializeField] public float dropStrength = 2.0f;
     [SerializeField] public GameObject dropPrefab;
@@ -42,6 +45,8 @@ public class PipeControl : MonoBehaviour
     ConnectionManager connectionManager;
     public Pipe[,] pipeMap;
     public string tablero;
+
+    public List<Pipe> correctTiles = new List<Pipe>();
 
     public static System.Action<Pipe[,]> OnBoardCreated;
 
@@ -190,6 +195,7 @@ public class PipeControl : MonoBehaviour
     //Check for the right path or good conections to reach the end /STILL IN PROGRESS/
     public void VictoryCheck()
     {
+        correctTiles.Clear();
         if (connectionManager == null)
             connectionManager = FindAnyObjectByType<ConnectionManager>();
         if (connectionManager == null) return;
@@ -207,25 +213,35 @@ public class PipeControl : MonoBehaviour
 
             int entry = dir + 2 > 4 ? dir - 2 : dir + 2;
             if (p.exit1 != entry && p.exit2 != entry) return;
+            else correctTiles.Add(p);
 
             dir = (p.exit1 == entry) ? p.exit2 : p.exit1;
 
             if (xp == w - 1 && yp == 0)
             {
-                if (dir == 2) connectionManager.DebugWinGame();
-                return;
-            }
+                if (dir == 2)
+                {
+                    foreach (var t in correctTiles)
+                    {
+                        Texture correctTex = t.type == 0 ? correctCorner : correctStraight;
+                        t.tileGO.GetComponent<Renderer>().material.SetTexture("_BaseMap", correctTex);
+                    }
 
-            switch (dir)
-            {
-                case 1: yp += 1; break;
-                case 2: xp += 1; break;
-                case 3: yp -= 1; break;
-                case 4: xp -= 1; break;
+                    connectionManager.DebugWinGame();
+                    return;
+                }
+
+                switch (dir)
+                {
+                    case 1: yp += 1; break;
+                    case 2: xp += 1; break;
+                    case 3: yp -= 1; break;
+                    case 4: xp -= 1; break;
+                }
             }
         }
+
+
+
     }
-
-
-
 }

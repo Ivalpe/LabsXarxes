@@ -36,7 +36,9 @@ public class MainSerializer : MonoBehaviour
         AssignID = 7,
         WinGame = 8,
         LoseGame = 9,
-        PlayersDisconected = 10,
+        HostDisconnected = 10,
+        AddTime = 11,
+        ApplyTime = 12,
     }
 
 
@@ -294,6 +296,7 @@ public class MainSerializer : MonoBehaviour
                     networkManager.replicationClient.ReadPacket(reader);
                     break;
 
+
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
                     break;
@@ -340,6 +343,12 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case CommandType.LoseGame:
                     networkManager.ShowLoseScreen();
+                    break;
+                case CommandType.ApplyTime:
+                    networkManager.currentClousingTimer += 10;
+                    break;
+                case CommandType.HostDisconnected:
+                    networkManager.ShowConnectionErrorMsg();
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");
@@ -414,6 +423,7 @@ public class MainSerializer : MonoBehaviour
                 case MsgType.BoardChange: //stays because client tells server which tile to update
                     networkManager.UpdateBoard(reader);
                     break;
+                    
                 default:
                     networkManager.Log("[ERROR] Received unknown message type.");
                     break;
@@ -450,6 +460,11 @@ public class MainSerializer : MonoBehaviour
                     break;
                 case CommandType.StartGame:
                     networkManager.cudp.UDPStartGame();
+                    break;
+                case CommandType.AddTime:
+                    //networkManager.ClousingTimer += 10;
+                    byte[] packet = SerializeTypes(false, CommandType.ApplyTime);
+                    networkManager.cudp.UDPSendToAllClients(packet);
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");
