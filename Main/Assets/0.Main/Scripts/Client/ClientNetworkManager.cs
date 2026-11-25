@@ -144,8 +144,7 @@ public class ClientNetworkManager : NetworkManager
         TCPconnection.StartNetwork(serverIp, userName, TCPport);
         UDPconnection.StartNetwork(serverIp, userName, UDPport);
 
-        ctrlDisplay = GetComponent<ControlsDisplay>();
-        if(ctrlDisplay)ctrlDisplay.HideHoldUI();
+
     }
 
     private void OnEnable()
@@ -192,6 +191,9 @@ public class ClientNetworkManager : NetworkManager
 
         //create serializer
         serializer = new ClientSerializer(this);
+
+        ctrlDisplay = FindAnyObjectByType<ControlsDisplay>(FindObjectsInactive.Include);
+        if (ctrlDisplay) ctrlDisplay.HideHoldUI();
     }
 
     private void Start()
@@ -217,7 +219,7 @@ public class ClientNetworkManager : NetworkManager
 
         if (!ctrlDisplay)
         {
-            ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
+            ctrlDisplay = FindAnyObjectByType<ControlsDisplay>(FindObjectsInactive.Include);
         }
 
         //smoothly apply transform (done here instead of OnWorldUpdate to avoid jitter)
@@ -523,8 +525,12 @@ public class ClientNetworkManager : NetworkManager
         if (gameOver) return;
         gameOver = true;
 
-        ctrlDisplay.HideHoldUI();
-        ctrlDisplay.HideDisconnectUI();
+        if (ctrlDisplay)
+        {
+            ctrlDisplay.HideHoldUI();
+            ctrlDisplay.HideDisconnectUI();
+        }
+            
 
         if (winScreenPanel != null) winScreenPanel.SetActive(true);
         if (loseScreenPanel != null) loseScreenPanel.SetActive(false);

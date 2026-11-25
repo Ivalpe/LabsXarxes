@@ -209,8 +209,9 @@ public class Player : NetObject
         if (other.gameObject.GetComponent<Microchip>())
         {
             
-            if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>();
-            ctrlDisplay.HideHoldUI();
+            if (!ctrlDisplay) ctrlDisplay = FindAnyObjectByType<ControlsDisplay>(FindObjectsInactive.Include);
+            else 
+                ctrlDisplay.HideHoldUI();
             
         }
     }

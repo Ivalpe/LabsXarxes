@@ -93,9 +93,7 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 * Players can join a room without a name
 
-* Player icons on the waiting room should be updated to match the current cat avatars
-
-*
+* Player icons on the waiting room should be updated to match the current cat avatars.
 
 ## Low Latency & Reliability
 
@@ -106,7 +104,7 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 
 ## Instructions
 
-* Alongside this README, there's two accompanying folders: CATasthrophyLineBuild
+* Alongside this README, there's two accompanying folders: CATasthropheLineBuild
 * To run locally on the same device, run both executables before connecting to the server
 * To run on separate devices:
 
@@ -141,7 +139,7 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 ## Team & Tasks
 
 * Iván Álvarez - [Ivalpe](https://github.com/Ivalpe)
-  * Victory Check
+  * Server-Authoritative Victory Check
 
 * Lara Guevara - [LaraGuevara](https://github.com/LaraGuevara):
   * Main Menu
@@ -151,7 +149,6 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * Bernat Loza - [BerniF0x](https://github.com/BerniF0x)
   * Room Decoration
   * Network Conditions (lag & jitter simulation)
-  * 
   
 * Maria Besora - [mariabeo](https://github.com/mariabeo)
   * Door Changes & Improvements
@@ -161,6 +158,7 @@ Clients can enter a server IP and custom display name to join the lobby room. Th
 * Kai Caire - [KaiCaire](https://github.com/KaiCaire)
   * Tile Replication
   * Cat Models Implementation
+  * New Tile Designs
   * Microchip Spawning & Adding Extra Time Mechanic
   * Grab Mechanic
   * Music, VFX & SFX Implementation
