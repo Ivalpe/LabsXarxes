@@ -96,6 +96,7 @@ public class ClientNetworkManager : NetworkManager
     public float currentDoorOpening = 0.0f;
     public float currentClousingTimer = 120.0f;
     public ConnectionManager.DoorState currentDoorState = ConnectionManager.DoorState.Closed;
+    public float currentlight = 0.0f;
     //game scene components
     //player component
     Player playerComponent;

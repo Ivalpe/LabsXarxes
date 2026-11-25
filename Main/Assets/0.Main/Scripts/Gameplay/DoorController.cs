@@ -26,6 +26,8 @@ public class DoorController : NetObject
     public TextMeshPro timer_text;
     private ConnectionManager serverManager;
     public Light doorLight;
+    private float currentLightIntensity = 0.1f;
+    private float flickerTimer = 0f;
 
     void Start()
     {
@@ -36,8 +38,11 @@ public class DoorController : NetObject
             ClosedLeftPos = door_left.position;
             ClosedRightPos = door_right.position;
         }
-        //doorLight=GetComponent<Light>();
-        doorLight.intensity = 0.0f;
+        if (doorLight != null)
+        {
+            doorLight.intensity = currentLightIntensity;
+        }
+        
     }
     
     //Slowly closes the door until its fully closed from the previously setted up pos
@@ -65,6 +70,7 @@ public class DoorController : NetObject
             }
         }
 
+        
         networkOpening = Mathf.Clamp01(networkOpening);
         float time_left = networkOpening * clousingTimer;
 
@@ -80,7 +86,7 @@ public class DoorController : NetObject
             {
                 door_right.position = ClosedRightPos;
             }
-            Flicker();
+
         }
         else
         {
@@ -93,8 +99,28 @@ public class DoorController : NetObject
             {
                 door_right.position = Vector3.Lerp(ClosingRightPos.position, OpenedRightPos.position, networkOpening);
             }
+
+        
+
+
         }
 
+        if (actualState == ConnectionManager.DoorState.Closing)
+        {
+            
+            Flicker();
+        }
+        else
+        {
+            
+            currentLightIntensity = 0.1f;
+        }
+
+        
+        if (doorLight != null)
+        {
+            doorLight.intensity = currentLightIntensity;
+        }
 
         if (timer_text != null)
         {
@@ -111,6 +137,7 @@ public class DoorController : NetObject
 
             }
 
+            
 
             if (actualState == ConnectionManager.DoorState.Opening)
             {
@@ -141,6 +168,7 @@ public class DoorController : NetObject
             w.Write(serverManager.doorOpening);
             w.Write(serverManager.ClousingTimer);
             w.Write((byte)serverManager.doorState);
+            w.Write(currentLightIntensity);
         }
     }
 
@@ -150,25 +178,28 @@ public class DoorController : NetObject
         float timer = r.ReadSingle();
         ConnectionManager.DoorState state = (ConnectionManager.DoorState)r.ReadByte();
         //Debug.Log($"[CLIENT DOOR] opening={opening}, state={state}");
-
+        float receivedIntensity = r.ReadSingle();
         if (ClientNetworkManager.Instance != null)
         {
             ClientNetworkManager.Instance.currentDoorOpening = opening;
             ClientNetworkManager.Instance.currentClousingTimer = timer;
             ClientNetworkManager.Instance.currentDoorState = state;
+            currentLightIntensity = receivedIntensity;
+
         }
     }
 
     private void Flicker()
     {
-        time();
-        doorLight.intensity = Random.Range(1f, 1.5f);
-       
+
+        flickerTimer -= Time.deltaTime;
+        if (flickerTimer <= 0f)
+        {
+            currentLightIntensity = Random.Range(0f, 5f);
+            flickerTimer = 1f; 
+        }
+
     }
 
-    IEnumerator time()
-    {
-        yield return new WaitForSeconds(2);
-    }
-     
+    
 }
