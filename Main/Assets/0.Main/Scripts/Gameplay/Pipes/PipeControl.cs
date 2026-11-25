@@ -46,7 +46,7 @@ public class PipeControl : MonoBehaviour
     public Pipe[,] pipeMap;
     public string tablero;
 
-    public bool completedPuzzle = false;
+    public bool solved = false;
 
     public List<Pipe> correctTiles = new List<Pipe>();
 
@@ -55,6 +55,9 @@ public class PipeControl : MonoBehaviour
     ClientNetworkManager networkManager;
 
     public AudioClip[] pipeRotSFX; //will be retrieved by each tile
+    ParticleSystem[] confettiVFX;
+
+    AudioSource boardSource;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -66,6 +69,12 @@ public class PipeControl : MonoBehaviour
 
         //get network manager
         networkManager = ClientNetworkManager.Instance;
+
+        confettiVFX = GetComponentsInChildren<ParticleSystem>();
+        foreach (var c in confettiVFX) c.Stop();
+
+        boardSource = GetComponent<AudioSource>();
+        
     }
 
     void GenerateBoardData()
@@ -117,8 +126,8 @@ public class PipeControl : MonoBehaviour
                     }
                     else
                     {
-                        p.exit1 = 1;
-                        p.exit2 = 3;
+                        p.exit1 = 2;
+                        p.exit2 = 4;
                         p.prefab = straightTile;
                     }
                     p.type = r; //type
@@ -226,7 +235,23 @@ public class PipeControl : MonoBehaviour
                         t.tileGO.GetComponent<Renderer>().material.SetTexture("_BaseMap", correctTex);
                     }
 
-                    completedPuzzle = true; //connectionManager.DebugWinGame();
+                    solved = true; //connectionManager.DebugWinGame();
+
+                   
+
+                    foreach(var c in confettiVFX)
+                    {
+                        c.Play();
+                    }
+
+                    if(boardSource.clip != null)
+                    {
+                        boardSource.Play();
+                    }
+
+                    byte[] packet = connectionManager.serializer.SerializeTypes(false, MainSerializer.CommandType.SolvedBoard);
+                    connectionManager.cudp.UDPSendToAllClients(packet);
+                    
                     return;
                 }
             }

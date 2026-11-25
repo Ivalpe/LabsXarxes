@@ -348,7 +348,7 @@ public class ConnectionManager : NetworkManager
 
                         bool SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
 
-                        if (!SomePlayerInTheRoom && boardScript.completedPuzzle)
+                        if (!SomePlayerInTheRoom && boardScript.solved)
                         {
                             DebugWinGame();
                         }

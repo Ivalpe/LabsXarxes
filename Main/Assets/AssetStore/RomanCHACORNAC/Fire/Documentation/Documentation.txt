@@ -1,0 +1,172 @@
+==============================================================
+Fire VFX - Documentation
+by Roman CHACORNAC
+==============================================================
+
+Thank you for using Fire VFX!
+Need help, a custom effect or a freelance collaboration?
+Contact me: optifx.fr@gmail.com
+
+--------------------------------------------------------------
+OVERVIEW
+--------------------------------------------------------------
+A stylized, fully opaque campfire built for mobile and VR.
+
+- No transparency: no overdraw, no sorting issues, correct
+  depth with every object around it.
+- One tiny unlit shader, no texture sampling.
+- GPU instanced particles: the whole fire costs a few draw
+  calls.
+- No setup: drop a prefab in your scene and you are done.
+- All colors live in the particle systems, so you can restyle
+  the fire without touching any code or shader.
+
+--------------------------------------------------------------
+COMPATIBILITY
+--------------------------------------------------------------
+Unity        : Unity 6 (6000.0) or newer
+Pipelines    : URP: Yes   Built-in: Yes   HDRP: No
+Platforms    : PC, Mobile (Android / iOS), VR (single-pass instanced)
+Shader       : RomanCHACORNAC/VFX/Uber
+
+The demo scene is made for URP (Linear color space, Bloom in
+a Volume). In Built-in, drop the prefabs in your own scene.
+
+Built-in only: P_FireLight shows a "Missing Script" component
+(URP light settings, added by Unity). It has no effect on the
+light: select P_FireLight and remove the empty component, or
+simply ignore it.
+
+--------------------------------------------------------------
+QUICK START
+--------------------------------------------------------------
+1. Open the demo scene: RomanCHACORNAC/Fire/Demo/Fire_Demo.unity
+2. Drag one of the prefabs into your scene:
+   - P_Campfire    : fire, light, fireflies and logs
+   - VFX_Fire      : the fire alone
+   - P_FireLight   : the flickering fire light alone
+   - VFX_Fireflies : the floating fireflies alone
+   All prefabs are in RomanCHACORNAC/Fire/Prefabs.
+3. Press Play. No setup needed.
+
+Tip: the fire looks best with Bloom enabled in your Volume.
+The material Base Color is HDR: raise it to make the fire glow.
+
+--------------------------------------------------------------
+HOW IT WORKS
+--------------------------------------------------------------
+VFX_Fire is made of 3 particle systems:
+
+  Base       The bright core at the bottom of the fire.
+  Flames     The body of the flames, rising and shrinking.
+  Sparks     The sparks and embers flying out.
+
+P_Campfire adds:
+
+  P_FireLight    A warm point light with a soft flicker.
+  VFX_Fireflies  Small glowing dots floating around.
+  Log_1 to 3     Two modeled log meshes.
+
+Every particle is opaque: small meshes for Base and Flames,
+opaque quads for Sparks and Fireflies. Instead of fading
+out, particles shrink to zero (Size over Lifetime): this is
+what keeps the effect fully opaque and cheap.
+
+--------------------------------------------------------------
+CUSTOMIZATION
+--------------------------------------------------------------
+Color       Start Color and Color over Lifetime, on each
+            particle system. The shader multiplies them by the
+            material Base Color.
+Glow        Material Base Color (HDR). Higher values = more
+            Bloom.
+Size        Scale the prefab: the particles follow (Scaling
+            Mode: Hierarchy). For finer control, Start Size
+            and Size over Lifetime.
+Height      Start Lifetime and Start Speed of Flames.
+Density     Emission > Rate over Time. Keep Max Particles low on
+            mobile.
+Wind        Velocity over Lifetime or Force over Lifetime.
+Light       P_FireLight: color, intensity, range and shadows on
+            the Light. Fire Light Flicker (same object) varies
+            them around these values: flicker amount, range
+            amount and speed. Remove it for a steady light.
+            Disable the shadows, or remove the light, on
+            low-end devices.
+Shapes      Renderer > Mesh on Base and Flames. Any mesh works;
+            the included one is in RomanCHACORNAC/Fire/Meshes.
+
+Good to know:
+- Keep "Enable GPU Instancing" checked on the renderers.
+- Billboard and Stretched Billboard modes also work with the
+  shader.
+
+--------------------------------------------------------------
+CONTENT
+--------------------------------------------------------------
+Prefabs     P_Campfire, VFX_Fire, P_FireLight, VFX_Fireflies
+Materials   M_Fire (fire), M_Log_Bark and M_Log_Wood (logs)
+Meshes      SM_Log_A, SM_Log_B, SM_Octahedron
+Script      FireLightFlicker (optional, on P_FireLight)
+Demo        Fire_Demo scene, ground, sky and post-processing
+Core        RomanCHACORNAC/Core: the Uber shader and the
+            environment shaders (logs, demo ground, sky). It is
+            shared by all my packs: if two of them are
+            imported, keep a single copy.
+
+--------------------------------------------------------------
+PERFORMANCE
+--------------------------------------------------------------
+- VFX_Fire: 89 particles at most, 3 particle systems.
+- P_Campfire: 125 particles at most (fireflies included),
+  4 particle systems, GPU instanced: about 4 draw calls for
+  the effect, plus the logs.
+- Opaque and depth-tested: no overdraw, no transparency sort.
+- Unlit shader, no texture sampling.
+- 1 point light with soft shadows: the most expensive part.
+  Turn its shadows off on mobile.
+
+--------------------------------------------------------------
+UPGRADING FROM FULL OPAQUE FIRE (previous version)
+--------------------------------------------------------------
+This update is a full rewrite. To upgrade:
+1. Back up your project.
+2. Delete the old Assets/FullOpaqueFire folder.
+3. Import this package.
+
+The fires already placed in your scenes are then replaced by
+the new VFX_Fire automatically. Their old overrides (colors,
+VFX_FireController settings) no longer apply: check them and
+adjust the new particle systems if needed.
+
+Breaking changes:
+- New folder: Assets/RomanCHACORNAC/Fire.
+- The VFX_FireController script was removed. Color, intensity
+  and wind are now set directly on the particle systems.
+- New shader RomanCHACORNAC/VFX/Uber replaces S_Particle.
+- Unity 6 is now required.
+
+--------------------------------------------------------------
+CHANGELOG
+--------------------------------------------------------------
+Full rewrite
+- New stylized look.
+- New P_Campfire prefab with modeled logs, a flickering light
+  and fireflies.
+- New optimized opaque shader (URP and Built-in).
+- GPU instancing for particles.
+- Colors baked into the particle systems: the fire itself
+  needs no script.
+- Lower particle count for mobile (89 at most for the fire).
+- New demo scene.
+
+--------------------------------------------------------------
+FOLLOW MY WORK
+--------------------------------------------------------------
+ArtStation : https://www.artstation.com/roman-chacornac
+LinkedIn   : https://www.linkedin.com/in/roman-chacornac-3b0b47193/
+YouTube    : https://www.youtube.com/@romanchacornac4822
+Instagram  : https://www.instagram.com/romanchacornac/
+
+If you like this pack, a review on the Asset Store helps a lot!
+==============================================================

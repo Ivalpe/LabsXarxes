@@ -680,6 +680,21 @@ public class ClientNetworkManager : NetworkManager
         
     }
 
+    public void Celebrate()
+    {
+        PipeControl boardScript = FindAnyObjectByType<PipeControl>();
+        if (!boardScript) return;
+
+        ParticleSystem[] confettiVFX = boardScript.GetComponentsInChildren<ParticleSystem>();
+        if (confettiVFX.Length <= 0) return;
+        foreach (var c in confettiVFX) c.Play();
+
+        AudioSource boardSource = boardScript.GetComponent<AudioSource>();
+        if (!boardSource || boardSource.clip == null) return;
+        boardSource.Play();
+
+    }
+
     public void ShowConnectionErrorMsg()
     {
         if (winScreenPanel != null) winScreenPanel.SetActive(false);

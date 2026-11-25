@@ -39,6 +39,7 @@ public class MainSerializer : MonoBehaviour
         HostDisconnected = 10,
         AddTime = 11,
         ApplyTime = 12,
+        SolvedBoard = 13
     }
 
 
@@ -349,6 +350,9 @@ public class MainSerializer : MonoBehaviour
                 //    break;
                 case CommandType.HostDisconnected:
                     networkManager.ShowConnectionErrorMsg();
+                    break;
+                case CommandType.SolvedBoard:
+                    networkManager.Celebrate();
                     break;
                 default:
                     networkManager.Log("[ERROR] Received unknown command.");
