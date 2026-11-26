@@ -29,6 +29,7 @@ public class DoorController : NetObject
     private float currentLightIntensity = 0.1f;
     private float flickerTimer = 0f;
 
+   
     void Start()
     {
         if (serverManager == null) serverManager = FindAnyObjectByType<ConnectionManager>();
@@ -42,7 +43,8 @@ public class DoorController : NetObject
         {
             doorLight.intensity = currentLightIntensity;
         }
-        
+
+        serverManager.postiionDoorZ = transform.localPosition.z;
     }
     
     //Slowly closes the door until its fully closed from the previously setted up pos

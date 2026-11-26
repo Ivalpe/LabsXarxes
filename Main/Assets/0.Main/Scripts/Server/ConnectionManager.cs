@@ -95,7 +95,7 @@ public class ConnectionManager : NetworkManager
     public float OpeningTimer = 3.0f;
     public float WaitingTimer = 3.0f;
     public float ClousingTimer = 120.0f;
-
+    public float postiionDoorZ = 0;
     public float doorOpening = 0.0f;
     private float StateTimer = 0.0f;
 
@@ -341,10 +341,13 @@ public class ConnectionManager : NetworkManager
                 case DoorState.Closing:
                     doorOpening -= dt / ClousingTimer;
 
-                    bool SomePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < 2.06f);
+                    bool somePlayerInTheRoom = playerInfoDic.Values.Any(p => p.position.z < postiionDoorZ);
+                    bool isBoardSolved = boardScript != null && boardScript.solved;
 
-                    if (!SomePlayerInTheRoom && boardScript.solved)
+                    if (!somePlayerInTheRoom && isBoardSolved)
                     {
+                        doorOpening = 0.0f;
+                        doorState = DoorState.Closed;
                         DebugWinGame();
                         break;
                     }
@@ -353,15 +356,7 @@ public class ConnectionManager : NetworkManager
                     {
                         doorOpening = 0.0f;
                         doorState = DoorState.Closed;
-
-                        if (!SomePlayerInTheRoom && boardScript.solved)
-                        {
-                            DebugWinGame();
-                        }
-                        else
-                        {
-                            DebugLoseGame();
-                        }
+                        DebugLoseGame();
                     }
                     break;
                 case DoorState.Closed:
